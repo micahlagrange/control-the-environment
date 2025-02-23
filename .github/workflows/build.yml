@@ -1,15 +1,15 @@
 name: continuous-integration
 on: [push]
 env:
-  GAME_NAME: game-name-goes-here
+  GAME_NAME: gdi-control-the-environment
   # unfortunately we need to also hardcode game name here in env since definitions in env can't reference eachother
-  ARTIFACT_PATH_LOVE: main/makelove-build/love/game-name-goes-here.love
-  ARTIFACT_PATH_APPIMAGE: main/makelove-build/appimage/game-name-goes-here.AppImage
-  ARTIFACT_PATH_WIN64: main/makelove-build/win64/game-name-goes-here-win64.zip
-  ARTIFACT_PATH_MACOS: main/makelove-build/macos/game-name-goes-here-macos.zip
-  ARTIFACT_PATH_LOVEJS: main/makelove-build/lovejs/game-name-goes-here-lovejs.zip
+  ARTIFACT_PATH_LOVE: main/makelove-build/love/gdi-control-the-environment.love
+  ARTIFACT_PATH_APPIMAGE: main/makelove-build/appimage/gdi-control-the-environment.AppImage
+  ARTIFACT_PATH_WIN64: main/makelove-build/win64/gdi-control-the-environment-win64.zip
+  ARTIFACT_PATH_MACOS: main/makelove-build/macos/gdi-control-the-environment-macos.zip
+  ARTIFACT_PATH_LOVEJS: main/makelove-build/lovejs/gdi-control-the-environment-lovejs.zip
   ITCH_USER: multivoxmuse
-  ITCH_GAME: game-name-goes-here
+  ITCH_GAME: gdi-control-the-environment
 
 jobs:
   build:

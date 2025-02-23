@@ -1,4 +1,4 @@
-name = "game-name-goes-here"
+name = "gdi-control-the-environment"
 default_targets = ["macos", "appimage", "win64", "lovejs"]
 build_directory = "makelove-build"
 
@@ -19,7 +19,7 @@ memory = "200000000"  # starting memory of the webpage (default is 20 MB)
 
 [macos.app_metadata]
 CFBundleName = "Game Name Goes Here"
-CFBundleIdentifier = "dev.micahturner.game-name-goes-here"
+CFBundleIdentifier = "dev.micahturner.gdi-control-the-environment"
 NSHumanReadableCopyright = "Copyright © 2024 Micah Turner"
 CFBundleShortVersionString = "0.0.1"
 
@@ -30,4 +30,4 @@ CompanyName = "Micah Turner" # "LÖVE World Domination Inc."
 LegalCopyright = "Copyright © 2024 Micah Turner"
 ProductName = "{name}" # "LÖVE"
 ProductVersion = "{version}"
-OriginalFilename = "game-name-goes-here.exe" # "love.exe"
+OriginalFilename = "gdi-control-the-environment.exe" # "love.exe"
