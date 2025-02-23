@@ -1,14 +1,11 @@
-love.graphics.setDefaultFilter("nearest", "nearest")
-
 local Character = require("libs/character")
-local Luafinding = require("libs/luafinding")
-local Vector = require("libs/vector")
+
+love.graphics.setDefaultFilter("nearest", "nearest")
 
 local SEED = 'jonny' -- define a seed variable
 local character = Character:new(0, 0, CHARACTER_SIZE, CHARACTER_SIZE)
 local aiCharacters = {}
 local camera = { x = 0, y = 0, scale = ZOOM_LEVEL }
-local fruits = {}
 local fruitImages = {}
 
 local GRASS_COLORS = {
@@ -63,7 +60,7 @@ end
 
 local function isCharacterInLiveCell(x, y)
     return World[math.floor(x / TILE_SIZE) + 1] and World[math.floor(x / TILE_SIZE) + 1][math.floor(y / TILE_SIZE) + 1] and
-    World[math.floor(x / TILE_SIZE) + 1][math.floor(y / TILE_SIZE) + 1].Alive
+        World[math.floor(x / TILE_SIZE) + 1][math.floor(y / TILE_SIZE) + 1].Alive
 end
 
 local function isCharacterPositionValid(x, y)
@@ -103,6 +100,8 @@ local function applyCellularAutomata(grid, width, height, passes, birthLimit, de
 end
 
 local function GenerateWorld()
+    -- nasty globals
+    Fruits = {}
     World = {}
     local width = WORLD_WIDTH / TILE_SIZE
     local height = WORLD_HEIGHT / TILE_SIZE
@@ -124,18 +123,23 @@ local function GenerateWorld()
 
     -- Add AI characters
     for i = 1, 5 do
-        local aiCharacter = Character:new(randomInt(1, WORLD_WIDTH), randomInt(1, WORLD_HEIGHT), CHARACTER_SIZE,
-            CHARACTER_SIZE)
+        local aiCharacter = Character:new(
+            randomInt(1, WORLD_WIDTH),
+            randomInt(1, WORLD_HEIGHT),
+            CHARACTER_SIZE,
+            CHARACTER_SIZE
+        )
+        aiCharacter.id = i
         table.insert(aiCharacters, aiCharacter)
     end
 
-    -- Add fruits to a percentage of the live cells
+    -- Add fruit to a percentage of the live cells
     for x = 1, width do
         for y = 1, height do
             if World[x][y].Alive and love.math.random() < FRUIT_PERCENTAGE then
                 local fruitIndex = randomInt(1, #fruitImages)
                 local fruitImage = fruitImages[fruitIndex]
-                table.insert(fruits, { x = x, y = y, image = fruitImage })
+                table.insert(Fruits, { x = x, y = y, image = fruitImage })
             end
         end
     end
@@ -204,17 +208,20 @@ local function updatePlayerMovement(dt)
     end
 end
 
-local function toVector(coords)
-    return Vector(coords.x, coords.y)
-end
+local fruitUpdateTimer = 0
+local fruitUpdateInterval = 2 -- seconds
 
-local function updateAICharacters()
-    for _, aiCharacter in ipairs(aiCharacters) do
-        local path = Luafinding(toVector(aiCharacter), toVector(character), World, true):GetPath()
-        if path and path[2] then
-            aiCharacter:setPath(path)
-            aiCharacter:moveToNextStep()
+local function updateAICharacters(dt)
+    fruitUpdateTimer = fruitUpdateTimer + dt
+    if fruitUpdateTimer >= fruitUpdateInterval then
+        for _, aiCharacter in ipairs(aiCharacters) do
+            aiCharacter:chooseNearestFruit()
         end
+        fruitUpdateTimer = 0
+    end
+
+    for _, aiCharacter in ipairs(aiCharacters) do
+        aiCharacter:update(dt)
     end
 end
 
@@ -226,7 +233,7 @@ end
 
 function love.update(dt)
     updatePlayerMovement(dt)
-    updateAICharacters()
+    updateAICharacters(dt)
 
     -- Update camera position with linear interpolation for smoothing
     camera.x = camera.x + (character.x - camera.x - (WINDOW_WIDTH / 2) / camera.scale) * 0.1
@@ -257,15 +264,16 @@ function love.draw(dt)
         end
     end
 
-    -- Draw fruits
-    for _, fruit in ipairs(fruits) do
+    -- Draw Fruits
+    for _, fruit in ipairs(Fruits) do
         if fruit.image then
             love.graphics.setColor(1, 1, 1) -- Reset color to white before drawing the image
             love.graphics.draw(fruit.image, (fruit.x - 1) * TILE_SIZE, (fruit.y - 1) * TILE_SIZE)
             if DEBUG then
                 -- Draw debug box around fruit
                 love.graphics.setColor(0, 1, 0)
-                love.graphics.rectangle("line", (fruit.x - 1) * TILE_SIZE, (fruit.y - 1) * TILE_SIZE, TILE_SIZE, TILE_SIZE)
+                love.graphics.rectangle("line", (fruit.x - 1) * TILE_SIZE, (fruit.y - 1) * TILE_SIZE, TILE_SIZE,
+                    TILE_SIZE)
             end
         end
     end

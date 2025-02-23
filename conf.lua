@@ -9,7 +9,7 @@ TILE_SIZE = 16
 AUTOMATA_RATIO_PERCENT = 45
 CHARACTER_SIZE = TILE_SIZE * 0.8
 FRUIT_PERCENTAGE = 0.009 -- Configurable fruit percentage
-ZOOM_LEVEL = 2 -- Configurable zoom level
+ZOOM_LEVEL = 1 -- Configurable zoom level
 
 function love.conf(t)
     t.title = "GameNameGoesHere"
