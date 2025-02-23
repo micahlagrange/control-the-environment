@@ -224,7 +224,6 @@ local function updateAICharacters(dt)
     if fruitUpdateTimer >= fruitUpdateInterval then
         for _, aiCharacter in ipairs(aiCharacters) do
             aiCharacter:chooseNearestFruit()
-            if DEBUG then print("total ai characters: " .. #aiCharacters) end
         end
         fruitUpdateTimer = 0
     end

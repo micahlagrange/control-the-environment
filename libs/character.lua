@@ -16,6 +16,7 @@ function Character:new(x, y, width, height)
     self.pathIndex = 1
     self.id = nil          -- Add identifier property
     self.targetFruit = nil -- Add targetFruit property
+    self.complaining = false -- Add complaining property
     return self
 end
 
@@ -45,6 +46,7 @@ function Character:chooseNearestFruit()
     if nearestFruit then
         nearestFruit.claimed = true
         self.targetFruit = nearestFruit
+        self.complaining = false -- Reset complaining status
     else
         self:complain()
     end
@@ -56,6 +58,7 @@ end
 
 function Character:complain()
     print("AI " .. self.id .. " is complaining!")
+    self.complaining = true -- Set complaining status
 end
 
 function Character:debugFruitPathing()
@@ -73,11 +76,16 @@ end
 
 function Character:update(dt)
     self:moveToNextStep(dt)
-    self:calculatePickupFruit()
 end
 
 function Character:draw()
-    love.graphics.setColor(1, 0, 0)
+    if self.complaining then
+        love.graphics.setColor(1, 0, 0) -- Red for complaining
+    elseif self.targetFruit then
+        love.graphics.setColor(1, 1, 0) -- Yellow for having a target fruit
+    else
+        love.graphics.setColor(0, 0, 1) -- Blue for no target fruit
+    end
     love.graphics.rectangle("fill", self.x + 1, self.y + 1, self.width - 2, self.height - 2)
 
     if DEBUG then
@@ -106,25 +114,6 @@ function Character:drawDebug()
     end
 end
 
-function Character:calculatePickupFruit()
-    if self.path and #self.path > 0 then
-        local nextStep = self.path[self.pathIndex]
-        local targetPos = tileToWorldSpace(nextStep.x, nextStep.y)
-        if math.abs(self.x - targetPos.x) < 1 and math.abs(self.y - targetPos.y) < 1 then
-            self.pathIndex = self.pathIndex + 1
-            if self.pathIndex > #self.path then
-                -- Reached the target
-                if self.targetFruit then
-                    print("Reached target fruit at " .. self.targetFruit.x .. ", " .. self.targetFruit.y)
-                    Util.removeEntityAtTile(Fruits, self.targetFruit.x, self.targetFruit.y)
-                    self.targetFruit = nil
-                    self.path = nil
-                end
-            end
-        end
-    end
-end
-
 function Character:moveToNextStep(dt)
     if self.targetFruit then
         if not self.path or #self.path == 0 then
@@ -144,6 +133,7 @@ function Character:moveToNextStep(dt)
             self.path = pathfinder:GetPath()
             if DEBUG and self.path then
                 print("Got path for AI " .. self.id .. ": " .. #self.path)
+                print(pathfinder:__tostring())
             end
             self.pathIndex = 1
         end
@@ -161,6 +151,23 @@ function Character:moveToNextStep(dt)
 
             self.x = self.x + directionX * dt * Character.AI_SPEED
             self.y = self.y + directionY * dt * Character.AI_SPEED
+
+            -- Check if reached the next step
+            if math.abs(self.x - targetPos.x) < 1 and math.abs(self.y - targetPos.y) < 1 then
+                self.pathIndex = self.pathIndex + 1
+                if self.pathIndex > #self.path then
+                    -- Reached the target
+                    if self.targetFruit then
+                        print("Reached target fruit at " .. self.targetFruit.x .. ", " .. self.targetFruit.y)
+                        Util.removeEntityAtTile(Fruits, self.targetFruit.x, self.targetFruit.y)
+                        self.targetFruit = nil
+                        self.path = nil
+                    end
+                end
+            end
+        else
+            -- If no path, try to find a new path
+            self.path = nil
         end
     end
     if DEBUG then

@@ -149,7 +149,7 @@ function Luafinding:__tostring()
 
     if path then
         for k, v in ipairs(path) do
-            local formatted = (k .. ": " .. v)
+            local formatted = (k .. ": " .. tostring(v))
             string = k == 1 and formatted or string .. "\n" .. formatted
         end
     end
