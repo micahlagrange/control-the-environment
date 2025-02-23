@@ -29,7 +29,7 @@ end
 function Character:chooseNearestFruit()
     if self.targetFruit then return end
 
-    print(#Fruits .. " fruits available")
+    if DEBUG then print(#Fruits .. " fruits available") end
 
     local nearestFruit = nil
     local nearestDistance = math.huge
@@ -48,6 +48,7 @@ function Character:chooseNearestFruit()
     else
         self:complain()
     end
+
     if DEBUG then
         self:debugFruitPathing()
     end
@@ -129,9 +130,19 @@ function Character:moveToNextStep(dt)
         if not self.path or #self.path == 0 then
             local startX, startY = math.floor(self.x / TILE_SIZE) + 1, math.floor(self.y / TILE_SIZE) + 1
             local endX, endY = self.targetFruit.x, self.targetFruit.y
-            local pathfinder = Luafinding(Vector(startX, startY), Vector(endX, endY), World, false)
+
+            -- Define the positionOpenCheck function
+            local function positionOpenCheck(pos)
+                if not World[pos.x] or not World[pos.y] then
+                    return false
+                end
+                local tile = World[pos.x][pos.y]
+                return tile and tile.Alive
+            end
+
+            local pathfinder = Luafinding(Vector(startX, startY), Vector(endX, endY), positionOpenCheck, false)
             self.path = pathfinder:GetPath()
-            if DEBUG then
+            if DEBUG and self.path then
                 print("Got path for AI " .. self.id .. ": " .. #self.path)
             end
             self.pathIndex = 1
