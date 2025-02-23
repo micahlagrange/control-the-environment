@@ -118,11 +118,11 @@ local function GenerateWorld()
     for x = 1, width do
         World[x] = {}
         for y = 1, height do
-            World[x][y] = { Alive = randomInt(0, 100) < AUTOMATA_RATIO_PERCENT }
+            World[x][y] = { Alive = randomInt(0, 100) < WORLD_AUTOMATA_RATIO }
         end
     end
 
-    World = applyCellularAutomata(World, width, height, WorldUpdateLimit, 3, 3)
+    World = applyCellularAutomata(World, width, height, WORLD_UPDATE_LIMIT, 3, 3)
 
     -- Ensure the playerChar spawns in a live cell
     repeat
@@ -168,21 +168,15 @@ local function GenerateGroundColors()
     for x = 1, width do
         GroundColors[x] = {}
         for y = 1, height do
-            GroundColors[x][y] = { Alive = randomInt(0, 100) < 61 }
+            GroundColors[x][y] = { Alive = randomInt(0, 100) < GROUND_AUTOMATA_RATIO }
         end
     end
 
-    GroundColors = applyCellularAutomata(GroundColors, width, height, GroundUpdateLimit, 3, 3)
+    GroundColors = applyCellularAutomata(GroundColors, width, height, GROUND_UPDATE_LIMIT, 3, 3)
 end
 
 local function startGame()
     love.math.setRandomSeed(tonumber(SEED) or SEED:byte(1, -1)) -- set the seed for reproducibility, always coerce it to a number
-
-    WorldTimer = 0
-    WorldTimerLimit = 0.001
-    WorldUpdateCounter = 0
-    WorldUpdateLimit = 2
-    GroundUpdateLimit = 1
 
     loadAICharacterImage()
     GenerateWorld()
@@ -253,8 +247,6 @@ function love.update(dt)
 
     -- Update camera position
     camera:update(dt, playerChar.x, playerChar.y, playerChar.width, playerChar.height, WINDOW_WIDTH, WINDOW_HEIGHT)
-
-    WorldTimer = WorldTimer + dt
 end
 
 function love.draw(dt)

@@ -17,6 +17,15 @@ function Character:new(x, y, width, height, image, isPlayer)
     self.id = nil            -- Add identifier property
     self.targetFruit = nil   -- Add targetFruit property
     self.complaining = false -- Add complaining property
+    self.animation = {
+        image = love.graphics.newImage("assets/images/guys/whitecollarwalk.png"),
+        frameWidth = 16,
+        frameHeight = 16,
+        currentFrame = 1,
+        totalFrames = 4,
+        frameDuration = 0.1,
+        time = 0
+    }
     if image then
         self.image = image
     end
@@ -24,6 +33,14 @@ function Character:new(x, y, width, height, image, isPlayer)
         self.isPlayer = isPlayer
     end
     return self
+end
+
+function Character:updateAnimation(dt)
+    self.animation.time = self.animation.time + dt
+    if self.animation.time >= self.animation.frameDuration then
+        self.animation.time = self.animation.time - self.animation.frameDuration
+        self.animation.currentFrame = self.animation.currentFrame % self.animation.totalFrames + 1
+    end
 end
 
 local function tileToWorldSpace(tileX, tileY)
@@ -63,7 +80,6 @@ function Character:chooseNearestFruit()
 end
 
 function Character:complain()
-    print("AI " .. self.id .. " is complaining!")
     self.complaining = true -- Set complaining status
 end
 
@@ -82,6 +98,7 @@ end
 
 function Character:update(dt)
     self:moveToNextStep(dt)
+    self:updateAnimation(dt)
 end
 
 function Character:draw()
@@ -107,18 +124,24 @@ function Character:draw()
         if self.path and #self.path > 0 then
             local nextStep = self.path[self.pathIndex]
             local targetPos = tileToWorldSpace(nextStep.x, nextStep.y)
-            if targetPos.x < self.x then
+            if targetPos.x > self.x then
                 scaleX = -1 -- Flip horizontally if moving left
             end
         end
-        love.graphics.draw(self.image, self.x + self.width / 2, self.y, 0, scaleX * (self.width / self.image:getWidth()), self.height / self.image:getHeight(), self.image:getWidth() / 2, 0)
+        local frameX = (self.animation.currentFrame - 1) * self.animation.frameWidth
+        love.graphics.draw(self.animation.image,
+            love.graphics.newQuad(frameX, 0, self.animation.frameWidth, self.animation.frameHeight,
+                self.animation.image:getDimensions()), self.x + self.width / 2, self.y, 0,
+            scaleX * (self.width / self.animation.frameWidth), self.height / self.animation.frameHeight,
+            self.animation.frameWidth / 2, 0)
     else
         love.graphics.rectangle("fill", self.x + 1, self.y + 1, self.width - 2, self.height - 2)
     end
 
-    if self.targetFruit then
-        love.graphics.setColor(1, 1, 0) -- Reset color to white
-        love.graphics.print("(" .. self.targetFruit.x .. ", " .. self.targetFruit.y .. ")", self.x, self.y + self.height + 5)
+    if DEBUG and self.targetFruit then
+        love.graphics.setColor(1, 1, 0) -- Reset color to yellow
+        love.graphics.print("(" .. self.targetFruit.x .. ", " .. self.targetFruit.y .. ")", self.x - 5,
+            self.y + self.height + 3)
     end
 
     if DEBUG then
@@ -169,15 +192,13 @@ function Character:moveToNextStep(dt)
                 print(pathfinder:__tostring())
             else
                 -- complain because you can't path, if target is on a dead cell
-                if not Util.isTileAlive(World, self.targetFruit.x, self.targetFruit.y) then
-                    self:complain()
-                end
-
+                self:complain()
             end
             self.pathIndex = 1
         end
 
         if self.path and #self.path > 0 then
+            self.complaining = false -- Reset complaining status
             local nextStep = self.path[self.pathIndex]
             local targetPos = tileToWorldSpace(nextStep.x, nextStep.y)
             local directionX = targetPos.x - self.x
