@@ -103,10 +103,22 @@ function Character:draw()
 
     if self.image then
         love.graphics.setColor(1, 1, 1) -- Reset color to white before drawing the image
-        love.graphics.draw(self.image, self.x, self.y, 0, self.width / self.image:getWidth(),
-        self.height / self.image:getHeight())
+        local scaleX = 1
+        if self.path and #self.path > 0 then
+            local nextStep = self.path[self.pathIndex]
+            local targetPos = tileToWorldSpace(nextStep.x, nextStep.y)
+            if targetPos.x < self.x then
+                scaleX = -1 -- Flip horizontally if moving left
+            end
+        end
+        love.graphics.draw(self.image, self.x + self.width / 2, self.y, 0, scaleX * (self.width / self.image:getWidth()), self.height / self.image:getHeight(), self.image:getWidth() / 2, 0)
     else
         love.graphics.rectangle("fill", self.x + 1, self.y + 1, self.width - 2, self.height - 2)
+    end
+
+    if self.targetFruit then
+        love.graphics.setColor(1, 1, 0) -- Reset color to white
+        love.graphics.print("(" .. self.targetFruit.x .. ", " .. self.targetFruit.y .. ")", self.x, self.y + self.height + 5)
     end
 
     if DEBUG then
@@ -155,6 +167,12 @@ function Character:moveToNextStep(dt)
             if DEBUG and self.path then
                 print("Got path for AI " .. self.id .. ": " .. #self.path)
                 print(pathfinder:__tostring())
+            else
+                -- complain because you can't path, if target is on a dead cell
+                if not Util.isTileAlive(World, self.targetFruit.x, self.targetFruit.y) then
+                    self:complain()
+                end
+
             end
             self.pathIndex = 1
         end

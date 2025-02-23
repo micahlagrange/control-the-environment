@@ -9,7 +9,7 @@ local aiCharacters = {}
 local camera = Camera:new(0, 0, ZOOM_LEVEL)
 local fruitImages = {}
 FRUIT_PERCENTAGE = 0.004 -- Configurable fruit percentage
-MAX_FRUIT = 20 -- Configurable max fruit
+MAX_FRUIT = 20           -- Configurable max fruit
 
 local GRASS_COLORS = {
     "#94a35b",
@@ -168,11 +168,11 @@ local function GenerateGroundColors()
     for x = 1, width do
         GroundColors[x] = {}
         for y = 1, height do
-            GroundColors[x][y] = { Lush = randomInt(0, 100) < 78 }
+            GroundColors[x][y] = { Alive = randomInt(0, 100) < 61 }
         end
     end
 
-    GroundColors = applyCellularAutomata(GroundColors, width, height, WorldTimerLimit, 3, 3)
+    GroundColors = applyCellularAutomata(GroundColors, width, height, GroundUpdateLimit, 3, 3)
 end
 
 local function startGame()
@@ -181,8 +181,8 @@ local function startGame()
     WorldTimer = 0
     WorldTimerLimit = 0.001
     WorldUpdateCounter = 0
-    WorldUpdateLimit = 1
-    GroundUpdateLimit = 20
+    WorldUpdateLimit = 2
+    GroundUpdateLimit = 1
 
     loadAICharacterImage()
     GenerateWorld()
@@ -265,7 +265,7 @@ function love.draw(dt)
             local tile = World[x][y]
             if tile.Alive then
                 local groundCell = GroundColors[x][y]
-                if groundCell.Lush then
+                if groundCell.Alive then
                     love.graphics.setColor(getTileColor(GRASS_COLORS, x, y))
                 else
                     love.graphics.setColor(getTileColor(DIRT_COLORS, x, y))

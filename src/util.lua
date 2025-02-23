@@ -18,4 +18,8 @@ function Util.removeEntityAtTile(givenTable, tile_x, tile_y)
     end
 end
 
+function Util.isTileAlive(world, x, y)
+    return world[x] and world[x][y] and world[x][y].Alive
+end
+
 return Util
