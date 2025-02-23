@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -ex
 
 rm -rf makelove-build
 makelove lovejs
