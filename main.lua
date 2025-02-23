@@ -262,9 +262,11 @@ function love.draw(dt)
         if fruit.image then
             love.graphics.setColor(1, 1, 1) -- Reset color to white before drawing the image
             love.graphics.draw(fruit.image, (fruit.x - 1) * TILE_SIZE, (fruit.y - 1) * TILE_SIZE)
-            -- Draw debug box around fruit
-            love.graphics.setColor(0, 1, 0)
-            love.graphics.rectangle("line", (fruit.x - 1) * TILE_SIZE, (fruit.y - 1) * TILE_SIZE, TILE_SIZE, TILE_SIZE)
+            if DEBUG then
+                -- Draw debug box around fruit
+                love.graphics.setColor(0, 1, 0)
+                love.graphics.rectangle("line", (fruit.x - 1) * TILE_SIZE, (fruit.y - 1) * TILE_SIZE, TILE_SIZE, TILE_SIZE)
+            end
         end
     end
 
@@ -276,9 +278,11 @@ function love.draw(dt)
         aiCharacter:draw()
     end
 
-    -- Draw debug box around character
-    love.graphics.setColor(0, 1, 0)
-    love.graphics.rectangle("line", character.x, character.y, character.width, character.height)
+    if DEBUG then
+        -- Draw debug box around character
+        love.graphics.setColor(0, 1, 0)
+        love.graphics.rectangle("line", character.x, character.y, character.width, character.height)
+    end
 
     love.graphics.pop() -- Restore the previous coordinate transformation state
 end
