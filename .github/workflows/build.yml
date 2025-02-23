@@ -39,6 +39,10 @@ jobs:
     - name: Build
       run: cd main && python3 -m makelove
 
+    - name: Print AppImage build logs
+      if: failure()
+      run: cat main/makelove-build/appimage/build.log
+
     - name: list artifacts
       run: ls -ltraR main
 
