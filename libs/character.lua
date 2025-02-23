@@ -6,7 +6,7 @@ Character.__index  = Character
 
 Character.AI_SPEED = 30 -- Set AI speed variable
 
-function Character:new(x, y, width, height)
+function Character:new(x, y, width, height, image, isPlayer)
     local self = setmetatable({}, Character)
     self.x = x
     self.y = y
@@ -14,9 +14,15 @@ function Character:new(x, y, width, height)
     self.height = height
     self.path = nil
     self.pathIndex = 1
-    self.id = nil          -- Add identifier property
-    self.targetFruit = nil -- Add targetFruit property
+    self.id = nil            -- Add identifier property
+    self.targetFruit = nil   -- Add targetFruit property
     self.complaining = false -- Add complaining property
+    if image then
+        self.image = image
+    end
+    if isPlayer then
+        self.isPlayer = isPlayer
+    end
     return self
 end
 
@@ -86,7 +92,22 @@ function Character:draw()
     else
         love.graphics.setColor(0, 0, 1) -- Blue for no target fruit
     end
-    love.graphics.rectangle("fill", self.x + 1, self.y + 1, self.width - 2, self.height - 2)
+
+    if not self.isPlayer then
+        -- Draw a circle above the AI character's head
+        local circleX = self.x + self.width / 2
+        local circleY = self.y - self.height / 2
+        local circleRadius = self.width * 0.25
+        love.graphics.circle("fill", circleX, circleY, circleRadius)
+    end
+
+    if self.image then
+        love.graphics.setColor(1, 1, 1) -- Reset color to white before drawing the image
+        love.graphics.draw(self.image, self.x, self.y, 0, self.width / self.image:getWidth(),
+        self.height / self.image:getHeight())
+    else
+        love.graphics.rectangle("fill", self.x + 1, self.y + 1, self.width - 2, self.height - 2)
+    end
 
     if DEBUG then
         -- Convert coordinates to tile space

@@ -4,7 +4,7 @@ local Camera = require("libs/camera")
 love.graphics.setDefaultFilter("nearest", "nearest")
 
 local SEED = 1 -- define a seed variable
-local playerChar = Character:new(0, 0, CHARACTER_SIZE, CHARACTER_SIZE)
+local playerChar = Character:new(0, 0, CHARACTER_SIZE, CHARACTER_SIZE, nil, true)
 local aiCharacters = {}
 local camera = Camera:new(0, 0, ZOOM_LEVEL)
 local fruitImages = {}
@@ -59,6 +59,12 @@ local function loadFruitImages()
             end
         end
     end
+end
+
+local aiCharacterImage
+
+local function loadAICharacterImage()
+    aiCharacterImage = love.graphics.newImage("assets/images/guys/whitecollar.png")
 end
 
 local function isCharacterInLiveCell(x, y)
@@ -132,7 +138,8 @@ local function GenerateWorld()
                 randomInt(1, WORLD_WIDTH),
                 randomInt(1, WORLD_HEIGHT),
                 CHARACTER_SIZE,
-                CHARACTER_SIZE
+                CHARACTER_SIZE,
+                aiCharacterImage
             )
         until isCharacterPositionValid(aiCharacter.x, aiCharacter.y)
         aiCharacter.id = #aiCharacters + 1
@@ -177,6 +184,7 @@ local function startGame()
     WorldUpdateLimit = 1
     GroundUpdateLimit = 20
 
+    loadAICharacterImage()
     GenerateWorld()
     GenerateGroundColors()
 end
