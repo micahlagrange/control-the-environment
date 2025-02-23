@@ -1,16 +1,52 @@
 love.graphics.setDefaultFilter("nearest", "nearest")
 
-
-
+local Character = require("libs/character")
+local Luafinding = require("libs/luafinding")
+local Vector = require("libs/vector")
 
 local SEED = 'jonny' -- define a seed variable
-local character = { x = 0, y = 0, dx = 0, dy = 0, width = CHARACTER_SIZE, height = CHARACTER_SIZE }
+local character = Character:new(0, 0, CHARACTER_SIZE, CHARACTER_SIZE)
+local aiCharacters = {}
 local camera = { x = 0, y = 0, scale = ZOOM_LEVEL }
 local fruits = {}
 local fruitImages = {}
 
+local GRASS_COLORS = {
+    "#94a35b",
+    "#849151",
+    "#737f47",
+}
+
+local DIRT_COLORS = {
+    "#a38f5b",
+    "#917f51",
+    "#7f6f47"
+}
+
+local WALL_COLORS = {
+    "#3B3B3B",
+    "#2F2F2F",
+    "#232323",
+    "#4F4F4F"
+}
+
+local function hexToRgb(hex)
+    hex = hex:gsub("#", "") -- Remove the '#' character if present
+    local r = tonumber(hex:sub(1, 2), 16) / 255
+    local g = tonumber(hex:sub(3, 4), 16) / 255
+    local b = tonumber(hex:sub(5, 6), 16) / 255
+    return r, g, b
+end
+
 local function randomInt(min, max)
     return math.floor(love.math.random() * (max - min + 1) + min)
+end
+
+local function getTileColor(colorTable, x, y)
+    local seed = tonumber(SEED) or SEED:byte(1, -1)
+    love.math.setRandomSeed(seed + x * 1000 + y)
+    local index = randomInt(1, #colorTable)
+    return hexToRgb(colorTable[index])
 end
 
 local function loadFruitImages()
@@ -26,62 +62,59 @@ local function loadFruitImages()
 end
 
 local function isCharacterInLiveCell(x, y)
-    return World[math.floor(x / TILE_SIZE) + 1] and World[math.floor(x / TILE_SIZE) + 1][math.floor(y / TILE_SIZE) + 1] and World[math.floor(x / TILE_SIZE) + 1][math.floor(y / TILE_SIZE) + 1].Alive
+    return World[math.floor(x / TILE_SIZE) + 1] and World[math.floor(x / TILE_SIZE) + 1][math.floor(y / TILE_SIZE) + 1] and
+    World[math.floor(x / TILE_SIZE) + 1][math.floor(y / TILE_SIZE) + 1].Alive
 end
 
 local function isCharacterPositionValid(x, y)
     return isCharacterInLiveCell(x, y) and
-           isCharacterInLiveCell(x + character.width, y) and
-           isCharacterInLiveCell(x, y + character.height) and
-           isCharacterInLiveCell(x + character.width, y + character.height)
+        isCharacterInLiveCell(x + character.width, y) and
+        isCharacterInLiveCell(x, y + character.height) and
+        isCharacterInLiveCell(x + character.width, y + character.height)
+end
+
+local function applyCellularAutomata(grid, width, height, passes, birthLimit, deathLimit)
+    for pass = 1, passes do
+        local newGrid = {}
+        for x = 1, width do
+            newGrid[x] = {}
+            for y = 1, height do
+                local aliveNeighbors = 0
+                for i = -1, 1 do
+                    for j = -1, 1 do
+                        if not (i == 0 and j == 0) then
+                            local nx, ny = x + i, y + j
+                            if nx > 0 and nx <= width and ny > 0 and ny <= height and grid[nx][ny].Alive then
+                                aliveNeighbors = aliveNeighbors + 1
+                            end
+                        end
+                    end
+                end
+                if grid[x][y].Alive then
+                    newGrid[x][y] = { Alive = aliveNeighbors >= deathLimit }
+                else
+                    newGrid[x][y] = { Alive = aliveNeighbors > birthLimit }
+                end
+            end
+        end
+        grid = newGrid
+    end
+    return grid
 end
 
 local function GenerateWorld()
     World = {}
+    local width = WORLD_WIDTH / TILE_SIZE
+    local height = WORLD_HEIGHT / TILE_SIZE
 
-    for x = 1, WORLD_WIDTH / TILE_SIZE do
+    for x = 1, width do
         World[x] = {}
-        for y = 1, WORLD_HEIGHT / TILE_SIZE do
-            local value = randomInt(0, 100)
-            if value < AUTOMATA_RATIO_PERCENT then
-                World[x][y] = { Alive = true }
-            else
-                World[x][y] = { Alive = false }
-            end
+        for y = 1, height do
+            World[x][y] = { Alive = randomInt(0, 100) < AUTOMATA_RATIO_PERCENT }
         end
     end
 
-    WorldTimer = 0
-    WorldUpdateCounter = 0
-
-    -- Update the world to finish the generation
-    while WorldUpdateCounter ~= WorldUpdateLimit do
-        for x = 1, #World do
-            for y = 1, #World[x] do
-                local tile = World[x][y]
-                local neighborsAlive = 0
-                for i = 0, 9 do
-                    if i ~= 4 then
-                        local xi = math.floor(i % 3) - 1
-                        local yi = math.floor(i / 3) - 1
-
-                        if World[x + xi] and World[x + xi][y + yi] and World[x + xi][y + yi].Alive then
-                            neighborsAlive = neighborsAlive + 1
-                        end
-                    end
-                end
-
-                if tile.Alive and neighborsAlive < 3 then
-                    World[x][y].Alive = false
-                end
-                if not tile.Alive and neighborsAlive > 5 then
-                    World[x][y].Alive = true
-                end
-            end
-        end
-
-        WorldUpdateCounter = WorldUpdateCounter + 1
-    end
+    World = applyCellularAutomata(World, width, height, WorldUpdateLimit, 3, 3)
 
     -- Ensure the character spawns in a live cell
     repeat
@@ -89,9 +122,16 @@ local function GenerateWorld()
         character.y = randomInt(1, WORLD_HEIGHT)
     until isCharacterPositionValid(character.x, character.y)
 
+    -- Add AI characters
+    for i = 1, 5 do
+        local aiCharacter = Character:new(randomInt(1, WORLD_WIDTH), randomInt(1, WORLD_HEIGHT), CHARACTER_SIZE,
+            CHARACTER_SIZE)
+        table.insert(aiCharacters, aiCharacter)
+    end
+
     -- Add fruits to a percentage of the live cells
-    for x = 1, #World do
-        for y = 1, #World[x] do
+    for x = 1, width do
+        for y = 1, height do
             if World[x][y].Alive and love.math.random() < FRUIT_PERCENTAGE then
                 local fruitIndex = randomInt(1, #fruitImages)
                 local fruitImage = fruitImages[fruitIndex]
@@ -101,6 +141,21 @@ local function GenerateWorld()
     end
 end
 
+local function GenerateGroundColors()
+    GroundColors = {}
+    local width = WORLD_WIDTH / TILE_SIZE
+    local height = WORLD_HEIGHT / TILE_SIZE
+
+    for x = 1, width do
+        GroundColors[x] = {}
+        for y = 1, height do
+            GroundColors[x][y] = { Lush = randomInt(0, 100) < 78 }
+        end
+    end
+
+    GroundColors = applyCellularAutomata(GroundColors, width, height, WorldTimerLimit, 3, 3)
+end
+
 local function startGame()
     love.math.setRandomSeed(tonumber(SEED) or SEED:byte(1, -1)) -- set the seed for reproducibility, always coerce it to a number
 
@@ -108,8 +163,10 @@ local function startGame()
     WorldTimerLimit = 0.001
     WorldUpdateCounter = 0
     WorldUpdateLimit = 2
+    GroundUpdateLimit = 20
 
     GenerateWorld()
+    GenerateGroundColors()
 end
 
 local function updatePlayerMovement(dt)
@@ -147,6 +204,20 @@ local function updatePlayerMovement(dt)
     end
 end
 
+local function toVector(coords)
+    return Vector(coords.x, coords.y)
+end
+
+local function updateAICharacters()
+    for _, aiCharacter in ipairs(aiCharacters) do
+        local path = Luafinding(toVector(aiCharacter), toVector(character), World, true):GetPath()
+        if path and path[2] then
+            aiCharacter:setPath(path)
+            aiCharacter:moveToNextStep()
+        end
+    end
+end
+
 function love.load(arg)
     love.window.setMode(WINDOW_WIDTH, WINDOW_HEIGHT)
     loadFruitImages()
@@ -155,6 +226,7 @@ end
 
 function love.update(dt)
     updatePlayerMovement(dt)
+    updateAICharacters()
 
     -- Update camera position with linear interpolation for smoothing
     camera.x = camera.x + (character.x - camera.x - (WINDOW_WIDTH / 2) / camera.scale) * 0.1
@@ -172,9 +244,14 @@ function love.draw(dt)
         for y = 1, #World[x] do
             local tile = World[x][y]
             if tile.Alive then
-                love.graphics.setColor(1, 1, 1)          -- changed from 255, 255, 255 to 1, 1, 1
+                local groundCell = GroundColors[x][y]
+                if groundCell.Lush then
+                    love.graphics.setColor(getTileColor(GRASS_COLORS, x, y))
+                else
+                    love.graphics.setColor(getTileColor(DIRT_COLORS, x, y))
+                end
             else
-                love.graphics.setColor(0.39, 0.39, 0.39) -- changed from 100, 100, 100 to 0.39, 0.39, 0.39
+                love.graphics.setColor(getTileColor(WALL_COLORS, x, y))
             end
             love.graphics.rectangle("fill", ((x - 1) * TILE_SIZE), ((y - 1) * TILE_SIZE), TILE_SIZE, TILE_SIZE)
         end
@@ -185,12 +262,19 @@ function love.draw(dt)
         if fruit.image then
             love.graphics.setColor(1, 1, 1) -- Reset color to white before drawing the image
             love.graphics.draw(fruit.image, (fruit.x - 1) * TILE_SIZE, (fruit.y - 1) * TILE_SIZE)
+            -- Draw debug box around fruit
+            love.graphics.setColor(0, 1, 0)
+            love.graphics.rectangle("line", (fruit.x - 1) * TILE_SIZE, (fruit.y - 1) * TILE_SIZE, TILE_SIZE, TILE_SIZE)
         end
     end
 
     -- Draw character
-    love.graphics.setColor(1, 0, 0)
-    love.graphics.rectangle("fill", character.x + 1, character.y + 1, character.width - 2, character.height - 2)
+    character:draw()
+
+    -- Draw AI characters
+    for _, aiCharacter in ipairs(aiCharacters) do
+        aiCharacter:draw()
+    end
 
     -- Draw debug box around character
     love.graphics.setColor(0, 1, 0)
