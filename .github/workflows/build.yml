@@ -43,31 +43,31 @@ jobs:
       run: ls -ltraR main
 
     - name: Upload to Github (love)
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: ${{env.GAME_NAME}} - love
         path: ${{env.ARTIFACT_PATH_LOVE}}
 
     - name: Upload to Github (web)
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: ${{env.GAME_NAME}} - web 
         path: ${{env.ARTIFACT_PATH_LOVEJS}}
 
     - name: Upload to Github (Linux)
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: ${{env.GAME_NAME}} - linux
         path: ${{env.ARTIFACT_PATH_APPIMAGE}}
 
     - name: Upload to Github (Win64)
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: ${{env.GAME_NAME}} - win64
         path: ${{env.ARTIFACT_PATH_WIN64}}
 
     - name: Upload to Github (MacOS)
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: ${{env.GAME_NAME}} - macos
         path: ${{env.ARTIFACT_PATH_MACOS}}
