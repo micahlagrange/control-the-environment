@@ -86,11 +86,11 @@ end
 
 function Character:draw()
     if self.complaining then
-        love.graphics.setColor(1, 0, 0) -- Red for complaining
+        love.graphics.setColor(1, 0, 0, 0.5) -- Red for complaining with transparency
     elseif self.targetFruit then
-        love.graphics.setColor(1, 1, 0) -- Yellow for having a target fruit
+        love.graphics.setColor(1, 1, 0, 0.5) -- Yellow for having a target fruit with transparency
     else
-        love.graphics.setColor(0, 0, 1) -- Blue for no target fruit
+        love.graphics.setColor(0, 0, 1, 0.5) -- Blue for no target fruit with transparency
     end
 
     if not self.isPlayer then
