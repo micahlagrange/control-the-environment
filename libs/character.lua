@@ -1,7 +1,7 @@
-local Luafinding   = require("libs/luafinding")
-local Util         = require("src/util")
+local Luafinding   = require("libs.luafinding")
+local Util         = require("src.util")
 local Character    = {}
-local Vector       = require("libs/vector")
+local Vector       = require("libs.vector")
 Character.__index  = Character
 
 Character.AI_SPEED = 30 -- Set AI speed variable
@@ -43,13 +43,6 @@ function Character:updateAnimation(dt)
     end
 end
 
-local function tileToWorldSpace(tileX, tileY)
-    return {
-        x = (tileX - 1) * TILE_SIZE,
-        y = (tileY - 1) * TILE_SIZE
-    }
-end
-
 function Character:chooseNearestFruit()
     if self.targetFruit then return end
 
@@ -59,7 +52,7 @@ function Character:chooseNearestFruit()
     local nearestDistance = math.huge
 
     for _, fruit in ipairs(Fruits) do
-        local fruitPos = tileToWorldSpace(fruit.x, fruit.y)
+        local fruitPos = Util.tileToWorldSpace(fruit.x, fruit.y)
         local distance = math.sqrt((self.x - fruitPos.x) ^ 2 + (self.y - fruitPos.y) ^ 2)
         if distance < nearestDistance and not fruit.claimed then
             nearestDistance = distance
@@ -85,7 +78,7 @@ end
 
 function Character:debugFruitPathing()
     if self.targetFruit and self.id == #Fruits - 1 then
-        local nearestFruitPos = tileToWorldSpace(self.targetFruit.x, self.targetFruit.y)
+        local nearestFruitPos = Util.tileToWorldSpace(self.targetFruit.x, self.targetFruit.y)
         local distance = math.sqrt((self.x - nearestFruitPos.x) ^ 2 + (self.y - nearestFruitPos.y) ^ 2)
         print("ai x = " ..
             self.x ..
@@ -123,7 +116,7 @@ function Character:draw()
         local scaleX = 1
         if self.path and #self.path > 0 then
             local nextStep = self.path[self.pathIndex]
-            local targetPos = tileToWorldSpace(nextStep.x, nextStep.y)
+            local targetPos = Util.tileToWorldSpace(nextStep.x, nextStep.y)
             if targetPos.x > self.x then
                 scaleX = -1 -- Flip horizontally if moving left
             end
@@ -163,7 +156,7 @@ function Character:drawDebug()
     if DEBUG then
         -- Draw fruit coordinates above their tiles
         for _, fruit in ipairs(Fruits) do
-            local fruitPos = tileToWorldSpace(fruit.x, fruit.y)
+            local fruitPos = Util.tileToWorldSpace(fruit.x, fruit.y)
             love.graphics.setColor(1, 1, 0)
             love.graphics.print("(" .. fruit.x .. ", " .. fruit.y .. ")", fruitPos.x, fruitPos.y - 10)
         end
@@ -173,7 +166,9 @@ end
 function Character:moveToNextStep(dt)
     if self.targetFruit then
         if not self.path or #self.path == 0 then
-            local startX, startY = math.floor(self.x / TILE_SIZE) + 1, math.floor(self.y / TILE_SIZE) + 1
+            local startPos = Util.worldToTileSpace(self.x, self.y)
+            local startY = startPos.y
+            local startX = startPos.x
             local endX, endY = self.targetFruit.x, self.targetFruit.y
 
             -- Define the positionOpenCheck function
@@ -200,7 +195,7 @@ function Character:moveToNextStep(dt)
         if self.path and #self.path > 0 then
             self.complaining = false -- Reset complaining status
             local nextStep = self.path[self.pathIndex]
-            local targetPos = tileToWorldSpace(nextStep.x, nextStep.y)
+            local targetPos = Util.tileToWorldSpace(nextStep.x, nextStep.y)
             local directionX = targetPos.x - self.x
             local directionY = targetPos.y - self.y
             local length = math.sqrt(directionX ^ 2 + directionY ^ 2)

@@ -1,15 +1,17 @@
-local Character = require("libs/character")
-local Camera = require("libs/camera")
+local Character = require("libs.character")
+local Camera    = require("libs.camera")
+local UI        = require("src.ui")
 
 love.graphics.setDefaultFilter("nearest", "nearest")
 
+local ui = UI:new()
 local SEED = 1 -- define a seed variable
-local playerChar = Character:new(0, 0, CHARACTER_SIZE, CHARACTER_SIZE, nil, true)
+local playerView = Character:new(0, 0, CHARACTER_SIZE, CHARACTER_SIZE, nil, true)
 local aiCharacters = {}
 local camera = Camera:new(0, 0, ZOOM_LEVEL)
 local fruitImages = {}
 FRUIT_PERCENTAGE = 0.004 -- Configurable fruit percentage
-MAX_FRUIT = 20           -- Configurable max fruit
+MAX_FRUIT = 10           -- Configurable max fruit
 
 local GRASS_COLORS = {
     "#94a35b",
@@ -74,9 +76,9 @@ end
 
 local function isCharacterPositionValid(x, y)
     return isCharacterInLiveCell(x, y) and
-        isCharacterInLiveCell(x + playerChar.width, y) and
-        isCharacterInLiveCell(x, y + playerChar.height) and
-        isCharacterInLiveCell(x + playerChar.width, y + playerChar.height)
+        isCharacterInLiveCell(x + playerView.width, y) and
+        isCharacterInLiveCell(x, y + playerView.height) and
+        isCharacterInLiveCell(x + playerView.width, y + playerView.height)
 end
 
 local function applyCellularAutomata(grid, width, height, passes, birthLimit, deathLimit)
@@ -124,11 +126,11 @@ local function GenerateWorld()
 
     World = applyCellularAutomata(World, width, height, WORLD_UPDATE_LIMIT, 3, 3)
 
-    -- Ensure the playerChar spawns in a live cell
+    -- Ensure the playerView spawns in a live cell
     repeat
-        playerChar.x = randomInt(1, WORLD_WIDTH)
-        playerChar.y = randomInt(1, WORLD_HEIGHT)
-    until isCharacterPositionValid(playerChar.x, playerChar.y)
+        playerView.x = randomInt(1, WORLD_WIDTH)
+        playerView.y = randomInt(1, WORLD_HEIGHT)
+    until isCharacterPositionValid(playerView.x, playerView.y)
 
     -- Add AI characters
     for i = 1, 5 do
@@ -183,7 +185,7 @@ local function startGame()
     GenerateGroundColors()
 end
 
-local function updatePlayerMovement(dt)
+local function updatePlayerView(dt)
     local dx, dy = 0, 0
     if love.keyboard.isDown("w") or love.keyboard.isDown("up") then
         dy = dy - 1
@@ -205,17 +207,14 @@ local function updatePlayerMovement(dt)
     end
 
     -- Apply movement speed
-    dx, dy = dx * 100 * dt, dy * 100 * dt
+    dx, dy = dx * PLAYER_VIEW_MOVE_SPEED * dt, dy * PLAYER_VIEW_MOVE_SPEED * dt
 
     -- Calculate new position
-    local newX = playerChar.x + dx
-    local newY = playerChar.y + dy
+    local newX = playerView.x + dx
+    local newY = playerView.y + dy
 
-    -- Check for collision with dead cells
-    if isCharacterPositionValid(newX, newY) then
-        playerChar.x = newX
-        playerChar.y = newY
-    end
+    playerView.x = newX
+    playerView.y = newY
 end
 
 local fruitUpdateTimer = 0
@@ -235,22 +234,27 @@ local function updateAICharacters(dt)
     end
 end
 
+local dragging = false
+local dragStartX, dragStartY
+
 function love.load(arg)
     love.window.setMode(WINDOW_WIDTH, WINDOW_HEIGHT)
     loadFruitImages()
     startGame()
+    ui:addButton("Dig", 0, 0)
 end
 
 function love.update(dt)
-    updatePlayerMovement(dt)
+    updatePlayerView(dt)
     updateAICharacters(dt)
 
     -- Update camera position
-    camera:update(dt, playerChar.x, playerChar.y, playerChar.width, playerChar.height, WINDOW_WIDTH, WINDOW_HEIGHT)
+    camera:update(dt, playerView.x, playerView.y, playerView.width, playerView.height, WINDOW_WIDTH, WINDOW_HEIGHT)
 end
 
 function love.draw(dt)
     camera:apply()
+    ui:draw()
 
     for x = 1, #World do
         for y = 1, #World[x] do
@@ -283,8 +287,9 @@ function love.draw(dt)
         end
     end
 
-    -- Draw playerChar
-    playerChar:draw()
+    if DEBUG then
+        playerView:draw()
+    end
 
     -- Draw AI characters
     for _, aiCharacter in ipairs(aiCharacters) do
@@ -292,9 +297,9 @@ function love.draw(dt)
     end
 
     if DEBUG then
-        -- Draw debug box around playerChar
+        -- Draw debug box around playerView
         love.graphics.setColor(0, 1, 0)
-        love.graphics.rectangle("line", playerChar.x, playerChar.y, playerChar.width, playerChar.height)
+        love.graphics.rectangle("line", playerView.x, playerView.y, playerView.width, playerView.height)
     end
 
     camera:reset()
@@ -315,5 +320,25 @@ function love.wheelmoved(x, y)
         camera:zoom(1.1)
     elseif y < 0 then
         camera:zoom(0.9)
+    end
+end
+
+function love.mousereleased(x, y, button)
+    if button == 2 and dragging then
+        dragging = false
+    end
+end
+
+function love.mousepressed(x, y, button)
+    if button == 2 then
+        dragging = true
+    end
+end
+
+function love.mousemoved(x, y, dx, dy)
+    -- local worldDX, worldDY = camera:toWorldSpace(dx, dy)
+    if dragging then
+        playerView.x = playerView.x - dx
+        playerView.y = playerView.y - dy
     end
 end

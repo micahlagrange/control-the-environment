@@ -1,9 +1,23 @@
-local Vector = require("libs/vector")
+local Vector = require("libs.vector")
 
 local Util = {}
 
 function Util.toVector(coords)
     return Vector(coords.x, coords.y)
+end
+
+function Util.tileToWorldSpace(tileX, tileY)
+    return {
+        x = (tileX - 1) * TILE_SIZE,
+        y = (tileY - 1) * TILE_SIZE
+    }
+end
+
+function Util.worldToTileSpace(worldX, worldY)
+    return {
+        x = math.floor(worldX / TILE_SIZE) + 1,
+        y = math.floor(worldY / TILE_SIZE) + 1
+    }
 end
 
 function Util.removeEntityAtTile(givenTable, tile_x, tile_y)
