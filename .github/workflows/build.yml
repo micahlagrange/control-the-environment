@@ -37,11 +37,11 @@ jobs:
         pip3 install ./makelove
 
     - name: Build
-      run: cd main && python3 -m makelove
+      run: cd main && python3 -m makelove | tee build_output.log
 
-    - name: Print AppImage build logs
+    - name: Print build output
       if: failure()
-      run: cat main/makelove-build/appimage/build.log
+      run: cat main/build_output.log
 
     - name: list artifacts
       run: ls -ltraR main
