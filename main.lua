@@ -1,12 +1,15 @@
 local Character = require("libs/character")
+local Camera = require("libs/camera")
 
 love.graphics.setDefaultFilter("nearest", "nearest")
 
-local SEED = 'jonny' -- define a seed variable
-local character = Character:new(0, 0, CHARACTER_SIZE, CHARACTER_SIZE)
+local SEED = 1 -- define a seed variable
+local playerChar = Character:new(0, 0, CHARACTER_SIZE, CHARACTER_SIZE)
 local aiCharacters = {}
-local camera = { x = 0, y = 0, scale = ZOOM_LEVEL }
+local camera = Camera:new(0, 0, ZOOM_LEVEL)
 local fruitImages = {}
+FRUIT_PERCENTAGE = 0.004 -- Configurable fruit percentage
+MAX_FRUIT = 20 -- Configurable max fruit
 
 local GRASS_COLORS = {
     "#94a35b",
@@ -65,9 +68,9 @@ end
 
 local function isCharacterPositionValid(x, y)
     return isCharacterInLiveCell(x, y) and
-        isCharacterInLiveCell(x + character.width, y) and
-        isCharacterInLiveCell(x, y + character.height) and
-        isCharacterInLiveCell(x + character.width, y + character.height)
+        isCharacterInLiveCell(x + playerChar.width, y) and
+        isCharacterInLiveCell(x, y + playerChar.height) and
+        isCharacterInLiveCell(x + playerChar.width, y + playerChar.height)
 end
 
 local function applyCellularAutomata(grid, width, height, passes, birthLimit, deathLimit)
@@ -115,31 +118,36 @@ local function GenerateWorld()
 
     World = applyCellularAutomata(World, width, height, WorldUpdateLimit, 3, 3)
 
-    -- Ensure the character spawns in a live cell
+    -- Ensure the playerChar spawns in a live cell
     repeat
-        character.x = randomInt(1, WORLD_WIDTH)
-        character.y = randomInt(1, WORLD_HEIGHT)
-    until isCharacterPositionValid(character.x, character.y)
+        playerChar.x = randomInt(1, WORLD_WIDTH)
+        playerChar.y = randomInt(1, WORLD_HEIGHT)
+    until isCharacterPositionValid(playerChar.x, playerChar.y)
 
     -- Add AI characters
     for i = 1, 5 do
-        local aiCharacter = Character:new(
-            randomInt(1, WORLD_WIDTH),
-            randomInt(1, WORLD_HEIGHT),
-            CHARACTER_SIZE,
-            CHARACTER_SIZE
-        )
-        aiCharacter.id = i
+        local aiCharacter
+        repeat
+            aiCharacter = Character:new(
+                randomInt(1, WORLD_WIDTH),
+                randomInt(1, WORLD_HEIGHT),
+                CHARACTER_SIZE,
+                CHARACTER_SIZE
+            )
+        until isCharacterPositionValid(aiCharacter.x, aiCharacter.y)
+        aiCharacter.id = #aiCharacters + 1
         table.insert(aiCharacters, aiCharacter)
     end
 
-    -- Add fruit to a percentage of the live cells
+    -- Add fruit to a percentage of the cells
     for x = 1, width do
         for y = 1, height do
-            if World[x][y].Alive and love.math.random() < FRUIT_PERCENTAGE then
-                local fruitIndex = randomInt(1, #fruitImages)
-                local fruitImage = fruitImages[fruitIndex]
-                table.insert(Fruits, { x = x, y = y, image = fruitImage })
+            if #Fruits < MAX_FRUIT and love.math.random() < FRUIT_PERCENTAGE then
+                if World[x][y].Alive or love.math.random() < 0.5 then
+                    local fruitIndex = randomInt(1, #fruitImages)
+                    local fruitImage = fruitImages[fruitIndex]
+                    table.insert(Fruits, { x = x, y = y, image = fruitImage })
+                end
             end
         end
     end
@@ -166,7 +174,7 @@ local function startGame()
     WorldTimer = 0
     WorldTimerLimit = 0.001
     WorldUpdateCounter = 0
-    WorldUpdateLimit = 2
+    WorldUpdateLimit = 1
     GroundUpdateLimit = 20
 
     GenerateWorld()
@@ -198,13 +206,13 @@ local function updatePlayerMovement(dt)
     dx, dy = dx * 100 * dt, dy * 100 * dt
 
     -- Calculate new position
-    local newX = character.x + dx
-    local newY = character.y + dy
+    local newX = playerChar.x + dx
+    local newY = playerChar.y + dy
 
     -- Check for collision with dead cells
     if isCharacterPositionValid(newX, newY) then
-        character.x = newX
-        character.y = newY
+        playerChar.x = newX
+        playerChar.y = newY
     end
 end
 
@@ -216,6 +224,7 @@ local function updateAICharacters(dt)
     if fruitUpdateTimer >= fruitUpdateInterval then
         for _, aiCharacter in ipairs(aiCharacters) do
             aiCharacter:chooseNearestFruit()
+            if DEBUG then print("total ai characters: " .. #aiCharacters) end
         end
         fruitUpdateTimer = 0
     end
@@ -235,17 +244,14 @@ function love.update(dt)
     updatePlayerMovement(dt)
     updateAICharacters(dt)
 
-    -- Update camera position with linear interpolation for smoothing
-    camera.x = camera.x + (character.x - camera.x - (WINDOW_WIDTH / 2) / camera.scale) * 0.1
-    camera.y = camera.y + (character.y - camera.y - (WINDOW_HEIGHT / 2) / camera.scale) * 0.1
+    -- Update camera position
+    camera:update(dt, playerChar.x, playerChar.y, playerChar.width, playerChar.height, WINDOW_WIDTH, WINDOW_HEIGHT)
 
     WorldTimer = WorldTimer + dt
 end
 
 function love.draw(dt)
-    love.graphics.push() -- Save the current coordinate transformation state
-    love.graphics.scale(camera.scale)
-    love.graphics.translate(-camera.x, -camera.y)
+    camera:apply()
 
     for x = 1, #World do
         for y = 1, #World[x] do
@@ -278,8 +284,8 @@ function love.draw(dt)
         end
     end
 
-    -- Draw character
-    character:draw()
+    -- Draw playerChar
+    playerChar:draw()
 
     -- Draw AI characters
     for _, aiCharacter in ipairs(aiCharacters) do
@@ -287,16 +293,28 @@ function love.draw(dt)
     end
 
     if DEBUG then
-        -- Draw debug box around character
+        -- Draw debug box around playerChar
         love.graphics.setColor(0, 1, 0)
-        love.graphics.rectangle("line", character.x, character.y, character.width, character.height)
+        love.graphics.rectangle("line", playerChar.x, playerChar.y, playerChar.width, playerChar.height)
     end
 
-    love.graphics.pop() -- Restore the previous coordinate transformation state
+    camera:reset()
 end
 
 function love.keyreleased(key)
     if key == "escape" then
         love.event.quit()
+    elseif key == "=" or key == "+" then
+        camera:zoom(1.1)
+    elseif key == "-" then
+        camera:zoom(0.9)
+    end
+end
+
+function love.wheelmoved(x, y)
+    if y > 0 then
+        camera:zoom(1.1)
+    elseif y < 0 then
+        camera:zoom(0.9)
     end
 end

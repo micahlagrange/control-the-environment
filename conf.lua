@@ -1,4 +1,4 @@
-DEBUG = false
+DEBUG = true
 SCALE = 1
 
 WINDOW_WIDTH = 800
@@ -8,7 +8,6 @@ WORLD_HEIGHT = 1200
 TILE_SIZE = 16
 AUTOMATA_RATIO_PERCENT = 45
 CHARACTER_SIZE = TILE_SIZE * 0.8
-FRUIT_PERCENTAGE = 0.009 -- Configurable fruit percentage
 ZOOM_LEVEL = 1 -- Configurable zoom level
 
 function love.conf(t)
