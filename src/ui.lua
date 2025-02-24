@@ -89,13 +89,12 @@ function UI:draw()
     local buttonHeight = self.height / 16
 
     for i, button in ipairs(self.buttons) do
-        love.graphics.setColor(0.5, 0.5, 0.5)
-        love.graphics.rectangle("fill", button.x * buttonWidth, button.y * buttonHeight, buttonWidth, buttonHeight)
         love.graphics.setColor(1, 0, 0)
         love.graphics.rectangle("line", button.x * buttonWidth, button.y * buttonHeight, buttonWidth, buttonHeight)
         love.graphics.setColor(1, 1, 1)
         local textWidth = love.graphics.getFont():getWidth(button.label)
         local textHeight = love.graphics.getFont():getHeight(button.label)
+        love.graphics.draw(digCursor, button.x * buttonWidth, button.y * buttonHeight)
         love.graphics.print(button.label, button.x * buttonWidth + (buttonWidth - textWidth) / 2,
             button.y * buttonHeight + (buttonHeight - textHeight) / 2)
     end
