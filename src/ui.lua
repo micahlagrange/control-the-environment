@@ -98,25 +98,22 @@ function UI:draw()
         local textHeight = love.graphics.getFont():getHeight(button.label)
         love.graphics.print(button.label, button.x * buttonWidth + (buttonWidth - textWidth) / 2,
             button.y * buttonHeight + (buttonHeight - textHeight) / 2)
+    end
 
-        -- highlight tile or button hovered on
-        love.graphics.setColor(1, 1, 1)
-        local hoveredButton = self:getHoveredButton()
-        local hoveredTile = self:getHoveredTile()
-        if hoveredButton then
-            love.graphics.rectangle("line", hoveredButton.x * buttonWidth, hoveredButton.y * buttonHeight, buttonWidth,
-                buttonHeight)
-        elseif hoveredTile then
-            love.graphics.rectangle("line", (hoveredTile.x - 1 )* TILE_SIZE, (hoveredTile.y - 1) * TILE_SIZE, TILE_SIZE, TILE_SIZE)
-        end
+    -- highlight button hovered on
+    local x, y = love.mouse.getPosition()
+    love.graphics.setColor(1, 1, 1)
+    local hoveredButton = self:getHoveredButton(x, y)
+    if hoveredButton then
+        love.graphics.rectangle("line", hoveredButton.x * buttonWidth, hoveredButton.y * buttonHeight, buttonWidth,
+            buttonHeight)
     end
 
     -- draw cursor last!
     love.graphics.draw(self.cursorImage, love.mouse.getX(), love.mouse.getY())
 end
 
-function UI:getHoveredButton()
-    local x, y = love.mouse.getPosition()
+function UI:getHoveredButton(x, y)
     local grid = self:screenToUIGridSpace(x, y)
     for _, button in ipairs(self.buttons) do
         if grid.x == button.x and grid.y == button.y then
@@ -126,8 +123,7 @@ function UI:getHoveredButton()
     return nil
 end
 
-function UI:getHoveredTile()
-    local x, y = love.mouse.getPosition()
+function UI:getHoveredTile(x, y)
     return self.camera:toTileSpace(x, y)
 end
 

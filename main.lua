@@ -8,7 +8,7 @@ local Character = require("libs.character")
 -- src classes
 local Util      = require("src.util")
 require("src.constants")
-local Camera         = require("libs.camera")
+local Camera         = require("src.camera")
 local camera         = Camera:new(0, 0, ZOOM_LEVEL)
 local World          = require("src.world")
 local world          = World:new(tiles, camera)
@@ -210,7 +210,7 @@ local fruitUpdateInterval = 1 -- seconds
 local giveUpTimer = 0
 local giveUpInterval = 5      -- seconds
 local retryIckTimer = 0
-local retryIckInterval = 10    -- seconds
+local retryIckInterval = 10   -- seconds
 
 local function updateAICharacters(dt)
     fruitUpdateTimer = fruitUpdateTimer + dt
@@ -308,6 +308,15 @@ function love.draw(dt)
         world:drawTileDebugSquares()
     end
 
+    -- highlight the hovered tile or button
+    local x, y = love.mouse.getPosition()
+    local hoveredTile = ui:getHoveredTile(x, y)
+    local highlightColor = abilities.selectedAbility and { 1, 0, 0 } or { 1, 1, 1 }
+    love.graphics.setColor(unpack(highlightColor))
+    if hoveredTile then
+        love.graphics.rectangle("line", (hoveredTile.x - 1) * TILE_SIZE, (hoveredTile.y - 1) * TILE_SIZE, TILE_SIZE,
+            TILE_SIZE)
+    end
     camera:reset()
     -- draw ui last
     ui:draw()
