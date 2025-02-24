@@ -48,10 +48,17 @@ function World:drawTileDebugSquares()
             else
                 love.graphics.setColor(1, 0, 0, 0.5) -- Red with transparency
             end
-            love.graphics.rectangle("fill", x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE)
+            love.graphics.rectangle("fill", (x - 1) * TILE_SIZE, (y -1) * TILE_SIZE, TILE_SIZE, TILE_SIZE)
         end
     end
     love.graphics.setColor(1, 1, 1, 1) -- Reset color to white
+end
+
+function World:debugClick(x, y)
+    local tile = self:getTileCoordinatesFromScreen(x, y)
+    if UI_DEBUG then
+        print("Clicked tile: " .. tile.x .. ", " .. tile.y)
+    end
 end
 
 return World

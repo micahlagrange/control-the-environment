@@ -341,6 +341,7 @@ function love.mousereleased(x, y, button)
         elseif abilities.selectedAbility then
             abilities:useAbility(x, y)
         end
+        world:debugClick(x, y)
     end
     if button == 2 and dragging then
         dragging = false

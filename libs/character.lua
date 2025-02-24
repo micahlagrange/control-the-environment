@@ -177,6 +177,25 @@ function Character:draw()
     end
 
     if DEBUG then self:drawDebug() end
+
+    -- Draw debug text for nextStep and currentTilePos
+    if ANIMATION_DEBUG and self.path and #self.path > 0 then
+        local nextStep = self.path[self.pathIndex]
+        local currentTilePos = Util.worldToTileSpace(self.x, self.y)
+        love.graphics.setColor(1, 1, 1)
+        love.graphics.print("Next: (" .. nextStep.x .. ", " .. nextStep.y .. ")", self.x, self.y + self.height + 10)
+        love.graphics.print("Current: (" .. currentTilePos.x .. ", " .. currentTilePos.y .. ")", self.x, self.y - 20)
+        love.graphics.print("Target: (" .. self.targetFruit.x .. ", " .. self.targetFruit.y .. ")", self.x, self.y - 30)
+        
+    end
+    if ANIMATION_DEBUG then
+        -- Draw a larger point on the tile the AI character is standing on
+        local currentTilePos = Util.worldToTileSpace(self.x, self.y)
+        love.graphics.setColor(1, 0, 0)
+        local tileCenterX = (currentTilePos.x - 1) * TILE_SIZE + TILE_SIZE / 2
+        local tileCenterY = (currentTilePos.y - 1) * TILE_SIZE + TILE_SIZE / 2
+        love.graphics.circle("fill", tileCenterX, tileCenterY, 3)
+    end
 end
 
 function Character:drawDebug()
@@ -197,8 +216,8 @@ function Character:moveToNextStep(dt)
     if self.targetFruit then
         if not self.path or #self.path == 0 then
             local startPos = Util.worldToTileSpace(self.x, self.y)
-            local startY = startPos.y
             local startX = startPos.x
+            local startY = startPos.y
             local endX, endY = self.targetFruit.x, self.targetFruit.y
 
             -- Define the positionOpenCheck function
