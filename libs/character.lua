@@ -4,11 +4,11 @@ local Character          = {}
 local Vector             = require("libs.vector")
 Character.__index        = Character
 
-Character.AI_SPEED       = 100 -- Set AI speed variable
+Character.AI_SPEED       = 50 -- Set AI speed variable
 
 local walkLeftRightImage = love.graphics.newImage("assets/images/guys/whitecollarwalk.png")
-local walkUpImage    = love.graphics.newImage("assets/images/guys/upwalk.png")
-local walkDownImage    = love.graphics.newImage("assets/images/guys/downwalk.png")
+local walkUpImage        = love.graphics.newImage("assets/images/guys/upwalk.png")
+local walkDownImage      = love.graphics.newImage("assets/images/guys/downwalk.png")
 
 function Character:new(world, x, y, width, height, image)
     local self = setmetatable({}, Character)
@@ -132,25 +132,28 @@ function Character:draw()
     if self.image then
         love.graphics.setColor(1, 1, 1) -- Reset color to white before drawing the image
         local scaleX = 1
+        local visualScaleX = 3          -- Scale factor for visual size
+        local visualScaleY = 3          -- Scale factor for visual size
         if self.path and #self.path > 0 then
             local nextStep = self.path[self.pathIndex]
             local currentTilePos = Util.worldToTileSpace(self.x, self.y)
-            if nextStep.y < currentTilePos.y then
-                self.animation = self.upanimation
-            elseif nextStep.y > currentTilePos.y then
-                self.animation = self.downanimation
+            if nextStep.x < currentTilePos.x then
+                self.animation = self.leftrightanimation
             elseif nextStep.x > currentTilePos.x then
                 self.animation = self.leftrightanimation
                 scaleX = -1 -- Flip horizontally if moving left
+            elseif nextStep.y < currentTilePos.y then
+                self.animation = self.downanimation
             else
-                self.animation = self.leftrightanimation
+                self.animation = self.upanimation
             end
         end
         local frameX = (self.animation.currentFrame - 1) * self.animation.frameWidth
         love.graphics.draw(self.animation.image,
             love.graphics.newQuad(frameX, 0, self.animation.frameWidth, self.animation.frameHeight,
-                self.animation.image:getDimensions()), self.x + self.width / 2, self.y, 0,
-            scaleX * (self.width / self.animation.frameWidth), self.height / self.animation.frameHeight,
+                self.animation.image:getDimensions()), self.x + self.width / 2, self.y - self.height * (visualScaleY / 2), 0,
+            scaleX * visualScaleX * (self.width / self.animation.frameWidth),
+            visualScaleY * (self.height / self.animation.frameHeight),
             self.animation.frameWidth / 2, 0)
     else
         love.graphics.rectangle("fill", self.x + 1, self.y + 1, self.width - 2, self.height - 2)
