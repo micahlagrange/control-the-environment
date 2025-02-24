@@ -185,7 +185,7 @@ end
 
 local function startGame()
     love.math.setRandomSeed(tonumber(seed) or seed:byte(1, -1)) -- set the seed for reproducibility, always coerce it to a number
-
+    
     loadAICharacterImage()
     GenerateWorld()
     GenerateGroundColors()

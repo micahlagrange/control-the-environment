@@ -61,8 +61,6 @@ function Character:chooseNearestFruit()
         nearestFruit.claimed = true
         self.targetFruit = nearestFruit
         self.complaining = false -- Reset complaining status
-    else
-        self:complain()
     end
 
     if DEBUG then
@@ -94,17 +92,17 @@ end
 
 function Character:draw()
     if self.complaining then
-        love.graphics.setColor(1, 0, 0, 0.5) -- Red for complaining with transparency
+        love.graphics.setColor(1, 0, 0, 0.5) -- Red for complaining
     elseif self.targetFruit then
-        love.graphics.setColor(1, 1, 0, 0.5) -- Yellow for having a target fruit with transparency
+        love.graphics.setColor(1, 1, 0, 0.5) -- Yellow for having a target fruit
     else
-        love.graphics.setColor(0, 0, 1, 0.5) -- Blue for no target fruit with transparency
+        love.graphics.setColor(0, 0, 1, 0.5) -- Blue for no target fruit
     end
 
     -- Draw a circle above the AI character's head
     local circleX = self.x + self.width / 2
     local circleY = self.y - self.height / 2
-    local circleRadius = self.width * 0.25
+    local circleRadius = self.width * 0.10
     love.graphics.circle("fill", circleX, circleY, circleRadius)
 
     if self.image then
@@ -178,7 +176,7 @@ function Character:moveToNextStep(dt)
                 print("Got path for AI " .. self.id .. ": " .. #self.path)
                 print(pathfinder:__tostring())
             else
-                -- complain because you can't path, if target is on a dead cell
+                -- complain because you have a target but can't path
                 self:complain()
             end
             self.pathIndex = 1
