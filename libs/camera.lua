@@ -32,7 +32,10 @@ end
 
 function Camera:toWorldSpace(x, y)
     -- whatever the zoom level, return the world coordinates of the screen coordinates
-    return x / self.scale + self.x, y / self.scale + self.y
+    return {
+        x = x / self.scale + self.x,
+        y = y / self.scale + self.y,
+    }
 end
 
 return Camera

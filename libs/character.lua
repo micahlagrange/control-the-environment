@@ -6,7 +6,7 @@ Character.__index  = Character
 
 Character.AI_SPEED = 30 -- Set AI speed variable
 
-function Character:new(x, y, width, height, image, isPlayer)
+function Character:new(world, x, y, width, height, image)
     local self = setmetatable({}, Character)
     self.x = x
     self.y = y
@@ -26,11 +26,9 @@ function Character:new(x, y, width, height, image, isPlayer)
         frameDuration = 0.1,
         time = 0
     }
+    self.world = world
     if image then
         self.image = image
-    end
-    if isPlayer then
-        self.isPlayer = isPlayer
     end
     return self
 end
@@ -103,13 +101,11 @@ function Character:draw()
         love.graphics.setColor(0, 0, 1, 0.5) -- Blue for no target fruit with transparency
     end
 
-    if not self.isPlayer then
-        -- Draw a circle above the AI character's head
-        local circleX = self.x + self.width / 2
-        local circleY = self.y - self.height / 2
-        local circleRadius = self.width * 0.25
-        love.graphics.circle("fill", circleX, circleY, circleRadius)
-    end
+    -- Draw a circle above the AI character's head
+    local circleX = self.x + self.width / 2
+    local circleY = self.y - self.height / 2
+    local circleRadius = self.width * 0.25
+    love.graphics.circle("fill", circleX, circleY, circleRadius)
 
     if self.image then
         love.graphics.setColor(1, 1, 1) -- Reset color to white before drawing the image
@@ -173,11 +169,7 @@ function Character:moveToNextStep(dt)
 
             -- Define the positionOpenCheck function
             local function positionOpenCheck(pos)
-                if not World[pos.x] or not World[pos.y] then
-                    return false
-                end
-                local tile = World[pos.x][pos.y]
-                return tile and tile.Alive
+                return self.world:tileIsAliveAtPosition(pos.x, pos.y)
             end
 
             local pathfinder = Luafinding(Vector(startX, startY), Vector(endX, endY), positionOpenCheck, false)

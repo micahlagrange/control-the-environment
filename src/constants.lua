@@ -1,4 +1,37 @@
-ABILITY_DIG     = "Dig"
-ABILITY_EXPLODE = "Explode"
-ABILITY_LINE    = "Line"
-ABILITY_DRAG    = "Drag"
+-- Models
+-- Ability button labels
+ABILITY_DIG         = "dig"
+ABILITY_EXPLODE     = "explode"
+ABILITY_LINE        = "line"
+ABILITY_DRAG        = "drag"
+
+-- Button types
+BUTTON_TYPE_ABILITY = "ability"
+BUTTON_TYPE_SYSTEM  = "system"
+
+-- System button labels
+SYSTEM_EXIT         = "exit"
+
+DEFAULT_SEED        = "defaultseed" -- if the player does not set a seed, use this
+FRUIT_PERCENTAGE    = 0.004         -- How often do fruit spawn
+MAX_FRUIT           = 10            -- Max number of fruits to spawn
+
+-- Colors
+GRASS_COLORS        = {
+    "#94a35b",
+    "#849151",
+    "#737f47",
+}
+
+DIRT_COLORS         = {
+    "#a38f5b",
+    "#917f51",
+    "#7f6f47"
+}
+
+WALL_COLORS         = {
+    "#3B3B3B",
+    "#2F2F2F",
+    "#232323",
+    "#4F4F4F"
+}

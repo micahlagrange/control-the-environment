@@ -1,39 +1,29 @@
-local Character = require("libs.character")
-local Camera    = require("libs.camera")
-local UI        = require("src.ui")
-local Abilities = require("src.abilities")
-require("src.constants")
-
 love.graphics.setDefaultFilter("nearest", "nearest")
 
-local ui = UI:new()
-local SEED = 1 -- define a seed variable
-local playerView = Character:new(0, 0, CHARACTER_SIZE, CHARACTER_SIZE, nil, true)
+local tiles = {}
+
+-- libs
+local Character = require("libs.character")
+
+-- src classes
+require("src.constants")
+local Camera       = require("libs.camera")
+local camera       = Camera:new(0, 0, ZOOM_LEVEL)
+local World        = require("src.world")
+local world        = World:new(tiles, camera)
+local Abilities    = require("src.abilities")
+local abilities    = Abilities:new(world)
+local UI           = require("src.ui")
+local ui           = UI:new(abilities)
+
+-- Locals
 local aiCharacters = {}
-local camera = Camera:new(0, 0, ZOOM_LEVEL)
-local fruitImages = {}
-FRUIT_PERCENTAGE = 0.004 -- Configurable fruit percentage
-MAX_FRUIT = 10           -- Configurable max fruit
+local fruitImages  = {}
+local playerView   = Character:new(world, 0, 0, CHARACTER_SIZE, CHARACTER_SIZE)
 
-local GRASS_COLORS = {
-    "#94a35b",
-    "#849151",
-    "#737f47",
-}
+local seed         = DEFAULT_SEED
 
-local DIRT_COLORS = {
-    "#a38f5b",
-    "#917f51",
-    "#7f6f47"
-}
-
-local WALL_COLORS = {
-    "#3B3B3B",
-    "#2F2F2F",
-    "#232323",
-    "#4F4F4F"
-}
-
+-- Constants / vars
 local function hexToRgb(hex)
     hex = hex:gsub("#", "") -- Remove the '#' character if present
     local r = tonumber(hex:sub(1, 2), 16) / 255
@@ -47,7 +37,7 @@ local function randomInt(min, max)
 end
 
 local function getTileColor(colorTable, x, y)
-    local seed = tonumber(SEED) or SEED:byte(1, -1)
+    local seed = tonumber(seed) or seed:byte(1, -1)
     love.math.setRandomSeed(seed + x * 1000 + y)
     local index = randomInt(1, #colorTable)
     return hexToRgb(colorTable[index])
@@ -72,8 +62,8 @@ local function loadAICharacterImage()
 end
 
 local function isCharacterInLiveCell(x, y)
-    return World[math.floor(x / TILE_SIZE) + 1] and World[math.floor(x / TILE_SIZE) + 1][math.floor(y / TILE_SIZE) + 1] and
-        World[math.floor(x / TILE_SIZE) + 1][math.floor(y / TILE_SIZE) + 1].Alive
+    return tiles[math.floor(x / TILE_SIZE) + 1] and tiles[math.floor(x / TILE_SIZE) + 1][math.floor(y / TILE_SIZE) + 1] and
+        tiles[math.floor(x / TILE_SIZE) + 1][math.floor(y / TILE_SIZE) + 1].Alive
 end
 
 local function isCharacterPositionValid(x, y)
@@ -115,18 +105,18 @@ end
 local function GenerateWorld()
     -- nasty globals
     Fruits = {}
-    World = {}
+    -- tiles = {} -- empty the world OOPS THIS BROKE IT?
     local width = WORLD_WIDTH / TILE_SIZE
     local height = WORLD_HEIGHT / TILE_SIZE
 
     for x = 1, width do
-        World[x] = {}
+        tiles[x] = {}
         for y = 1, height do
-            World[x][y] = { Alive = randomInt(0, 100) < WORLD_AUTOMATA_RATIO }
+            tiles[x][y] = { Alive = randomInt(0, 100) < WORLD_AUTOMATA_RATIO }
         end
     end
 
-    World = applyCellularAutomata(World, width, height, WORLD_UPDATE_LIMIT, 3, 3)
+    tiles = applyCellularAutomata(tiles, width, height, WORLD_UPDATE_LIMIT, 3, 3)
 
     -- Ensure the playerView spawns in a live cell
     repeat
@@ -139,6 +129,7 @@ local function GenerateWorld()
         local aiCharacter
         repeat
             aiCharacter = Character:new(
+                world,
                 randomInt(1, WORLD_WIDTH),
                 randomInt(1, WORLD_HEIGHT),
                 CHARACTER_SIZE,
@@ -154,7 +145,7 @@ local function GenerateWorld()
     for x = 1, width do
         for y = 1, height do
             if #Fruits < MAX_FRUIT and love.math.random() < FRUIT_PERCENTAGE then
-                if World[x][y].Alive or love.math.random() < 0.5 then
+                if tiles[x][y].Alive or love.math.random() < 0.5 then
                     local fruitIndex = randomInt(1, #fruitImages)
                     local fruitImage = fruitImages[fruitIndex]
                     table.insert(Fruits, { x = x, y = y, image = fruitImage })
@@ -180,7 +171,7 @@ local function GenerateGroundColors()
 end
 
 local function startGame()
-    love.math.setRandomSeed(tonumber(SEED) or SEED:byte(1, -1)) -- set the seed for reproducibility, always coerce it to a number
+    love.math.setRandomSeed(tonumber(seed) or seed:byte(1, -1)) -- set the seed for reproducibility, always coerce it to a number
 
     loadAICharacterImage()
     GenerateWorld()
@@ -239,11 +230,11 @@ end
 local dragging = false
 
 function love.load(arg)
-    abilities = Abilities:new()
     love.window.setMode(WINDOW_WIDTH, WINDOW_HEIGHT)
     loadFruitImages()
     startGame()
     ui:addButton(ABILITY_DIG, 4, 15)
+    ui:addButton(SYSTEM_EXIT, 15, 0)
 end
 
 function love.update(dt)
@@ -257,9 +248,9 @@ end
 function love.draw(dt)
     camera:apply()
 
-    for x = 1, #World do
-        for y = 1, #World[x] do
-            local tile = World[x][y]
+    for x = 1, #tiles do
+        for y = 1, #tiles[x] do
+            local tile = tiles[x][y]
             if tile.Alive then
                 local groundCell = GroundColors[x][y]
                 if groundCell.Alive then
@@ -286,10 +277,6 @@ function love.draw(dt)
                     TILE_SIZE)
             end
         end
-    end
-
-    if DEBUG then
-        playerView:draw()
     end
 
     -- Draw AI characters
@@ -327,11 +314,13 @@ function love.wheelmoved(x, y)
 end
 
 function love.mousereleased(x, y, button)
-    if UI_DEBUG then
-            print("Clicked coordinates: (" .. x .. ", " .. y .. ")")
-    end
     if button == 1 then
-        abilities:selectAbility(ui:clickedButton(x, y))
+        local clickedButton = ui:clickedButton(x, y)
+        if clickedButton then
+            ui:doButtonClick(clickedButton)
+        elseif abilities.selectedAbility then
+            abilities:useAbility(x, y)
+        end
     end
     if button == 2 and dragging then
         dragging = false

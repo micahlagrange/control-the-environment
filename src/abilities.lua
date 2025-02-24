@@ -3,7 +3,7 @@ require("src.constants")
 local Abilities = {}
 Abilities.__index = Abilities
 
-function Abilities:new()
+function Abilities:new(world)
     local self   = setmetatable({}, Abilities)
     -- Each ability is not equipped by default
     -- When an ability is used, it's counter goes down. once it reaches zero you can no longer use it
@@ -12,6 +12,7 @@ function Abilities:new()
     self.explode = 0
     self.line    = 0
     self.drag    = 0
+    self.world   = world
     return self
 end
 
@@ -42,6 +43,20 @@ end
 
 function Abilities:readyAbility(ability)
     self.selectedAbility = ability
+end
+
+function Abilities:useAbility()
+    if self.selectedAbility == ABILITY_DIG then
+        self.dig = self.dig - 1
+        -- set the clicked tile to be an Alive cell
+        self.world:breakWallTileAtMouse()
+    elseif self.selectedAbility == ABILITY_EXPLODE then
+        self.explode = self.explode - 1
+    elseif self.selectedAbility == ABILITY_LINE then
+        self.line = self.line - 1
+    elseif self.selectedAbility == ABILITY_DRAG then
+        self.drag = self.drag - 1
+    end
 end
 
 return Abilities
