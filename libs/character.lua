@@ -21,6 +21,7 @@ function Character:new(world, x, y, width, height, image)
     self.id = nil            -- Add identifier property
     self.targetFruit = nil   -- Add targetFruit property
     self.complaining = false -- Add complaining property
+    self.icks = {}           -- Add icks property
     self.leftrightanimation = {
         image = walkLeftRightImage,
         frameWidth = 16,
@@ -50,10 +51,26 @@ function Character:new(world, x, y, width, height, image)
     }
     self.animation = self.leftrightanimation
     self.world = world
-    if image then
-        self.image = image
-    end
     return self
+end
+
+function Character:addIck(x, y)
+    table.insert(self.icks, { x = x, y = y, timestamp = love.timer.getTime() })
+end
+
+function Character:targetGivesIck(target)
+    -- remove old icks
+    for i = #self.icks, 1, -1 do
+        if love.timer.getTime() - self.icks[i].timestamp > 10 then
+            table.remove(self.icks, i)
+        end
+    end
+    for _, ick in ipairs(self.icks) do
+        if ick.x == target.x and ick.y == target.y then
+            return true
+        end
+    end
+    return false
 end
 
 function Character:updateAnimation(dt)
@@ -77,12 +94,18 @@ function Character:chooseNearestFruit()
         local fruitPos = Util.tileToWorldSpace(fruit.x, fruit.y)
         local distance = math.sqrt((self.x - fruitPos.x) ^ 2 + (self.y - fruitPos.y) ^ 2)
         if distance < nearestDistance and not fruit.claimed then
+            if self:targetGivesIck(fruit) then
+                -- Skip this fruit if it gives ick
+                if DEBUG then print("Skipping ick fruit at " .. fruit.x .. ", " .. fruit.y) end
+                goto continue
+            end
             nearestDistance = distance
             nearestFruit = fruit
         end
+        ::continue::
     end
     if nearestFruit then
-        nearestFruit.claimed = true
+        nearestFruit.claimed = love.timer.getTime()
         self.targetFruit = nearestFruit
         self.complaining = false -- Reset complaining status
     end
@@ -112,9 +135,44 @@ end
 function Character:update(dt)
     self:moveToNextStep(dt)
     self:updateAnimation(dt)
+    if self.targetFruit and self.complaining then
+        if self.targetFruit.claimed and love.timer.getTime() - self.targetFruit.claimed > 10 then
+            self:giveUpOnTarget()
+        end
+    end
 end
 
 function Character:draw()
+    love.graphics.setColor(1, 1, 1) -- Reset color to white before drawing the image
+    local scaleX = 1
+    local visualScaleX = 3          -- Scale factor for visual size
+    local visualScaleY = 3          -- Scale factor for visual size
+    if self.path and #self.path > 0 then
+        local nextStep = self.path[self.pathIndex]
+        local currentTilePos = Util.worldToTileSpace(self.x, self.y)
+        if nextStep.x < currentTilePos.x then
+            self.animation = self.leftrightanimation
+        elseif nextStep.x > currentTilePos.x then
+            self.animation = self.leftrightanimation
+            scaleX = -1 -- Flip horizontally if moving right, since we only have a left walking version
+        elseif nextStep.y > currentTilePos.y then
+            self.animation = self.downanimation
+        elseif nextStep.y == currentTilePos.y and nextStep.x == currentTilePos.x then
+            -- target is in the same tile, just keep the same animation
+        else
+            self.animation = self.upanimation
+        end
+    end
+    local frameX = (self.animation.currentFrame - 1) * self.animation.frameWidth
+    love.graphics.draw(self.animation.image,
+        love.graphics.newQuad(frameX, 0, self.animation.frameWidth, self.animation.frameHeight,
+            self.animation.image:getDimensions()), self.x + self.width / 2, self.y - self.height * (visualScaleY / 2),
+        0,
+        scaleX * visualScaleX * (self.width / self.animation.frameWidth),
+        visualScaleY * (self.height / self.animation.frameHeight),
+        self.animation.frameWidth / 2, 0)
+
+    -- Draw a circle above the AI character's head
     if self.complaining then
         love.graphics.setColor(1, 0, 0, 0.5) -- Red for complaining
     elseif self.targetFruit then
@@ -122,46 +180,12 @@ function Character:draw()
     else
         love.graphics.setColor(0, 0, 1, 0.5) -- Blue for no target fruit
     end
-
-    -- Draw a circle above the AI character's head
     local circleX = self.x + self.width / 2
-    local circleY = self.y - self.height / 2
-    local circleRadius = self.width * 0.10
+    local circleY = self.y - self.height - 15
+    local circleRadius = self.width * 0.10 * visualScaleX
     love.graphics.circle("fill", circleX, circleY, circleRadius)
 
-    if self.image then
-        love.graphics.setColor(1, 1, 1) -- Reset color to white before drawing the image
-        local scaleX = 1
-        local visualScaleX = 3          -- Scale factor for visual size
-        local visualScaleY = 3          -- Scale factor for visual size
-        if self.path and #self.path > 0 then
-            local nextStep = self.path[self.pathIndex]
-            local currentTilePos = Util.worldToTileSpace(self.x, self.y)
-            if nextStep.x < currentTilePos.x then
-                self.animation = self.leftrightanimation
-            elseif nextStep.x > currentTilePos.x then
-                self.animation = self.leftrightanimation
-                scaleX = -1 -- Flip horizontally if moving right, since we only have a left walking version
-            elseif nextStep.y > currentTilePos.y then
-                self.animation = self.downanimation
-            elseif nextStep.y == currentTilePos.y and nextStep.x == currentTilePos.x then
-                -- target is in the same tile, just keep the same animation
-            else
-                self.animation = self.upanimation
-            end
-        end
-        local frameX = (self.animation.currentFrame - 1) * self.animation.frameWidth
-        love.graphics.draw(self.animation.image,
-            love.graphics.newQuad(frameX, 0, self.animation.frameWidth, self.animation.frameHeight,
-                self.animation.image:getDimensions()), self.x + self.width / 2, self.y - self.height * (visualScaleY / 2),
-            0,
-            scaleX * visualScaleX * (self.width / self.animation.frameWidth),
-            visualScaleY * (self.height / self.animation.frameHeight),
-            self.animation.frameWidth / 2, 0)
-    else
-        love.graphics.rectangle("fill", self.x + 1, self.y + 1, self.width - 2, self.height - 2)
-    end
-
+    -- debu
     if PATH_DEBUG and self.targetFruit then
         love.graphics.setColor(1, 1, 0) -- Reset color to yellow
         love.graphics.print("(" .. self.targetFruit.x .. ", " .. self.targetFruit.y .. ")", self.x - 5,
@@ -198,10 +222,19 @@ function Character:draw()
     end
 end
 
+function Character:giveUpOnTarget()
+    if self.targetFruit then
+        self:addIck(self.targetFruit.x, self.targetFruit.y)
+        self.targetFruit.claimed = nil
+        self.targetFruit = nil
+        self.path = nil
+        self.complaining = false
+    end
+end
+
 function Character:drawDebug()
     love.graphics.setColor(0, 1, 0)
     love.graphics.rectangle("line", self.x, self.y, self.width, self.height)
-
     if PATH_DEBUG then
         -- Draw fruit coordinates above their tiles
         for _, fruit in ipairs(Fruits) do

@@ -20,7 +20,7 @@ local ui             = UI:new(abilities)
 -- Locals
 local aiCharacters   = {}
 local fruitImages    = {}
-local playerView     = Character:new(world, 0, 0, CHARACTER_SIZE, CHARACTER_SIZE)
+local playerView     = Character:new(world, WORLD_WIDTH / 2, WORLD_HEIGHT / 2, CHARACTER_SIZE, CHARACTER_SIZE)
 
 local seed           = DEFAULT_SEED
 local worldArea      = WORLD_WIDTH * WORLD_HEIGHT
@@ -59,22 +59,10 @@ local function loadFruitImages()
     end
 end
 
-local aiCharacterImage
-
-local function loadAICharacterImage()
-    aiCharacterImage = love.graphics.newImage("assets/images/guys/whitecollar.png")
-end
-
-local function isCharacterInLiveCell(x, y)
-    return tiles[math.floor(x / TILE_SIZE) + 1] and tiles[math.floor(x / TILE_SIZE) + 1][math.floor(y / TILE_SIZE) + 1] and
-        tiles[math.floor(x / TILE_SIZE) + 1][math.floor(y / TILE_SIZE) + 1].Alive
-end
 
 local function isCharacterPositionValid(x, y)
-    return isCharacterInLiveCell(x, y) and
-        isCharacterInLiveCell(x + playerView.width, y) and
-        isCharacterInLiveCell(x, y + playerView.height) and
-        isCharacterInLiveCell(x + playerView.width, y + playerView.height)
+    local tile = Util.worldToTileSpace(x, y)
+    return Util.isTileAlive(tiles, tile.x, tile.y)
 end
 
 local function applyCellularAutomata(grid, width, height, passes, birthLimit, deathLimit)
@@ -131,12 +119,6 @@ local function GenerateWorld()
 
     applyCellularAutomata(tiles, width, height, WORLD_UPDATE_LIMIT, 3, 3)
 
-    -- Ensure the playerView spawns in a live cell
-    repeat
-        playerView.x = randomInt(1, WORLD_WIDTH)
-        playerView.y = randomInt(1, WORLD_HEIGHT)
-    until isCharacterPositionValid(playerView.x, playerView.y)
-
     -- Add AI characters
     if DEBUG then
         print("Adding " .. maxCapitalists .. " AI characters")
@@ -187,7 +169,6 @@ end
 local function startGame()
     love.math.setRandomSeed(tonumber(seed) or seed:byte(1, -1)) -- set the seed for reproducibility, always coerce it to a number
 
-    loadAICharacterImage()
     GenerateWorld()
     GenerateGroundColors()
 end
@@ -225,10 +206,15 @@ local function updatePlayerView(dt)
 end
 
 local fruitUpdateTimer = 0
-local fruitUpdateInterval = 2 -- seconds
+local fruitUpdateInterval = 1 -- seconds
+local giveUpTimer = 0
+local giveUpInterval = 5      -- seconds
+local retryIckTimer = 0
+local retryIckInterval = 10    -- seconds
 
 local function updateAICharacters(dt)
     fruitUpdateTimer = fruitUpdateTimer + dt
+    giveUpTimer = giveUpTimer + dt
     if fruitUpdateTimer >= fruitUpdateInterval then
         for _, aiCharacter in ipairs(aiCharacters) do
             aiCharacter:chooseNearestFruit()
