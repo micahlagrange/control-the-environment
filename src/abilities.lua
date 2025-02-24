@@ -1,4 +1,7 @@
+require("src.constants")
+
 local Abilities = {}
+Abilities.__index = Abilities
 
 function Abilities:new()
     local self   = setmetatable({}, Abilities)
@@ -29,6 +32,10 @@ function Abilities:selectAbility(ability)
     elseif ability == ABILITY_DRAG then
         if self.drag > 0 then
             self:readyAbility(ABILITY_DRAG)
+        end
+    else
+        if UI_DEBUG then
+            print("Invalid ability selected")
         end
     end
 end

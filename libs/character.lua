@@ -131,13 +131,13 @@ function Character:draw()
         love.graphics.rectangle("fill", self.x + 1, self.y + 1, self.width - 2, self.height - 2)
     end
 
-    if DEBUG and self.targetFruit then
+    if PATH_DEBUG and self.targetFruit then
         love.graphics.setColor(1, 1, 0) -- Reset color to yellow
         love.graphics.print("(" .. self.targetFruit.x .. ", " .. self.targetFruit.y .. ")", self.x - 5,
             self.y + self.height + 3)
     end
 
-    if DEBUG then
+    if PATH_DEBUG then
         -- Convert coordinates to tile space
         local tileX = math.floor(self.x / TILE_SIZE) + 1
         local tileY = math.floor(self.y / TILE_SIZE) + 1
@@ -153,7 +153,7 @@ function Character:drawDebug()
     love.graphics.setColor(0, 1, 0)
     love.graphics.rectangle("line", self.x, self.y, self.width, self.height)
 
-    if DEBUG then
+    if PATH_DEBUG then
         -- Draw fruit coordinates above their tiles
         for _, fruit in ipairs(Fruits) do
             local fruitPos = Util.tileToWorldSpace(fruit.x, fruit.y)
@@ -182,7 +182,7 @@ function Character:moveToNextStep(dt)
 
             local pathfinder = Luafinding(Vector(startX, startY), Vector(endX, endY), positionOpenCheck, false)
             self.path = pathfinder:GetPath()
-            if DEBUG and self.path then
+            if PATH_DEBUG and self.path then
                 print("Got path for AI " .. self.id .. ": " .. #self.path)
                 print(pathfinder:__tostring())
             else
@@ -225,7 +225,7 @@ function Character:moveToNextStep(dt)
             self.path = nil
         end
     end
-    if DEBUG then
+    if PATH_DEBUG then
         self:debugFruitPathing()
     end
 end

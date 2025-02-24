@@ -1,6 +1,8 @@
 local Character = require("libs.character")
 local Camera    = require("libs.camera")
 local UI        = require("src.ui")
+local abilities = require("src.abilities")
+require("src.constants")
 
 love.graphics.setDefaultFilter("nearest", "nearest")
 
@@ -235,13 +237,12 @@ local function updateAICharacters(dt)
 end
 
 local dragging = false
-local dragStartX, dragStartY
 
 function love.load(arg)
     love.window.setMode(WINDOW_WIDTH, WINDOW_HEIGHT)
     loadFruitImages()
     startGame()
-    ui:addButton("Dig", 0, 0)
+    ui:addButton(ABILITY_DIG, 4, 15)
 end
 
 function love.update(dt)
@@ -254,7 +255,6 @@ end
 
 function love.draw(dt)
     camera:apply()
-    ui:draw()
 
     for x = 1, #World do
         for y = 1, #World[x] do
@@ -303,6 +303,8 @@ function love.draw(dt)
     end
 
     camera:reset()
+    -- draw ui last
+    ui:draw()
 end
 
 function love.keyreleased(key)
@@ -324,6 +326,12 @@ function love.wheelmoved(x, y)
 end
 
 function love.mousereleased(x, y, button)
+    if UI_DEBUG then
+            print("Clicked coordinates: (" .. x .. ", " .. y .. ")")
+    end
+    if button == 1 then
+        abilities:selectAbility(ui:clickedButton(x, y))
+    end
     if button == 2 and dragging then
         dragging = false
     end
@@ -336,7 +344,6 @@ function love.mousepressed(x, y, button)
 end
 
 function love.mousemoved(x, y, dx, dy)
-    -- local worldDX, worldDY = camera:toWorldSpace(dx, dy)
     if dragging then
         playerView.x = playerView.x - dx
         playerView.y = playerView.y - dy

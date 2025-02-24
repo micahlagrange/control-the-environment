@@ -1,3 +1,5 @@
+UI_DEBUG = true
+PATH_DEBUG = false
 DEBUG = false
 SCALE = 1
 
