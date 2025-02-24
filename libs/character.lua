@@ -94,15 +94,13 @@ function Character:chooseNearestFruit()
         local fruitPos = Util.tileToWorldSpace(fruit.x, fruit.y)
         local distance = math.sqrt((self.x - fruitPos.x) ^ 2 + (self.y - fruitPos.y) ^ 2)
         if distance < nearestDistance and not fruit.claimed then
-            if self:targetGivesIck(fruit) then
-                -- Skip this fruit if it gives ick
-                if DEBUG then print("Skipping ick fruit at " .. fruit.x .. ", " .. fruit.y) end
-                goto continue
+            if not self:targetGivesIck(fruit) then
+                nearestDistance = distance
+                nearestFruit = fruit
+            elseif DEBUG then
+                print("Skipping ick fruit at " .. fruit.x .. ", " .. fruit.y)
             end
-            nearestDistance = distance
-            nearestFruit = fruit
         end
-        ::continue::
     end
     if nearestFruit then
         nearestFruit.claimed = love.timer.getTime()
