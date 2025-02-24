@@ -5,6 +5,7 @@ Abilities.__index = Abilities
 
 function Abilities:new(world)
     local self   = setmetatable({}, Abilities)
+    self.world   = world
     -- Each ability is not equipped by default
     -- When an ability is used, it's counter goes down. once it reaches zero you can no longer use it
     -- default values
@@ -12,7 +13,6 @@ function Abilities:new(world)
     self.explode = 0
     self.line    = 0
     self.drag    = 0
-    self.world   = world
     return self
 end
 

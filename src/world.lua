@@ -10,9 +10,14 @@ function World:new(tiles, camera)
     return self
 end
 
+function World:getWorldCoordinatesFromScreen(x, y)
+    -- The camera may have moved the world around, so we need to add the camera's offset
+    return self.camera:toWorldSpace(x, y)
+end
+
 function World:getTileCoordinatesFromScreen(x, y)
     -- The camera may have moved the world around, so we need to add the camera's offset
-    local camPos = self.camera:toWorldSpace(x, y)
+    local camPos = self:getWorldCoordinatesFromScreen(x, y)
     local tile = Util.worldToTileSpace(camPos.x, camPos.y)
     if DEBUG then
         print("Getting tile... Camera returned x: " .. tile.x .. " Camera y: " .. tile.y)
@@ -49,7 +54,7 @@ function World:drawTileDebugSquares()
             else
                 love.graphics.setColor(1, 0, 0, 0.5) -- Red with transparency
             end
-            love.graphics.rectangle("fill", (x - 1) * TILE_SIZE, (y - 1) * TILE_SIZE, TILE_SIZE, TILE_SIZE)
+            love.graphics.rectangle("fill", x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE)
         end
     end
     love.graphics.setColor(1, 1, 1, 1) -- Reset color to white
@@ -58,7 +63,8 @@ end
 function World:debugClick(x, y)
     local tile = self:getTileCoordinatesFromScreen(x, y)
     if UI_DEBUG then
-        print("Clicked tile: " .. tile.x .. ", " .. tile.y)
+        local worldPos = self:getWorldCoordinatesFromScreen(x, y)
+        print("Clicked tile: " .. tile.x .. ", " .. tile.y .. " world space: " .. worldPos.x .. ", " .. worldPos.y)
     end
 end
 

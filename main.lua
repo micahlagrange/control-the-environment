@@ -15,7 +15,7 @@ local world          = World:new(tiles, camera)
 local Abilities      = require("src.abilities")
 local abilities      = Abilities:new(world)
 local UI             = require("src.ui")
-local ui             = UI:new(abilities)
+local ui             = UI:new(abilities, camera)
 
 -- Locals
 local aiCharacters   = {}

@@ -1,3 +1,5 @@
+local Util = require("src.util")
+
 local Camera = {}
 Camera.__index = Camera
 
@@ -36,6 +38,11 @@ function Camera:toWorldSpace(x, y)
         x = x / self.scale + self.x,
         y = y / self.scale + self.y,
     }
+end
+
+function Camera:toTileSpace(x, y)
+    local worldPos = self:toWorldSpace(x, y)
+    return Util.worldToTileSpace(worldPos.x, worldPos.y)
 end
 
 return Camera
