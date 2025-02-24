@@ -288,6 +288,8 @@ function love.draw(dt)
         -- Draw debug box around playerView
         love.graphics.setColor(0, 1, 0)
         love.graphics.rectangle("line", playerView.x, playerView.y, playerView.width, playerView.height)
+        -- Draw debug squares on world tiles
+        world:drawTileDebugSquares()
     end
 
     camera:reset()

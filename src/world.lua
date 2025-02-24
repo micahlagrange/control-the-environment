@@ -25,6 +25,7 @@ function World:breakWallTileAtMouse()
     local tilePos = self:getTileCoordinatesFromScreen(uix, uiy)
     if self.tiles[tilePos.x] and self.tiles[tilePos.y] then
         local tile = self.tiles[tilePos.x][tilePos.y]
+            if DEBUG then print("setting (alive? " .. tostring(tile.Alive) .. ") tile " .. tilePos.x .. ", " .. tilePos.y .. " to alive") end
         if not tile.Alive then
             tile.Alive = true
         end
@@ -37,6 +38,20 @@ function World:tileIsAliveAtPosition(x, y)
     end
     local tile = self.tiles[x][y]
     return tile and tile.Alive
+end
+
+function World:drawTileDebugSquares()
+    for x, column in pairs(self.tiles) do
+        for y, tile in pairs(column) do
+            if tile.Alive then
+                love.graphics.setColor(0, 1, 0, 0.5) -- Green with transparency
+            else
+                love.graphics.setColor(1, 0, 0, 0.5) -- Red with transparency
+            end
+            love.graphics.rectangle("fill", x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE)
+        end
+    end
+    love.graphics.setColor(1, 1, 1, 1) -- Reset color to white
 end
 
 return World
