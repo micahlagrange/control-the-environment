@@ -7,21 +7,24 @@ local Character = require("libs.character")
 
 -- src classes
 require("src.constants")
-local Camera       = require("libs.camera")
-local camera       = Camera:new(0, 0, ZOOM_LEVEL)
-local World        = require("src.world")
-local world        = World:new(tiles, camera)
-local Abilities    = require("src.abilities")
-local abilities    = Abilities:new(world)
-local UI           = require("src.ui")
-local ui           = UI:new(abilities)
+local Camera         = require("libs.camera")
+local camera         = Camera:new(0, 0, ZOOM_LEVEL)
+local World          = require("src.world")
+local world          = World:new(tiles, camera)
+local Abilities      = require("src.abilities")
+local abilities      = Abilities:new(world)
+local UI             = require("src.ui")
+local ui             = UI:new(abilities)
 
 -- Locals
-local aiCharacters = {}
-local fruitImages  = {}
-local playerView   = Character:new(world, 0, 0, CHARACTER_SIZE, CHARACTER_SIZE)
+local aiCharacters   = {}
+local fruitImages    = {}
+local playerView     = Character:new(world, 0, 0, CHARACTER_SIZE, CHARACTER_SIZE)
 
-local seed         = DEFAULT_SEED
+local seed           = DEFAULT_SEED
+local worldArea      = WORLD_WIDTH * WORLD_HEIGHT
+local maxCapitalists = math.floor(worldArea / 100000)
+local maxFruit       = maxCapitalists * 2
 
 -- Constants / vars
 local function hexToRgb(hex)
@@ -134,7 +137,10 @@ local function GenerateWorld()
     until isCharacterPositionValid(playerView.x, playerView.y)
 
     -- Add AI characters
-    for i = 1, 5 do
+    if DEBUG then
+        print("Adding " .. maxCapitalists .. " AI characters")
+    end
+    for i = 1, maxCapitalists do
         local aiCharacter
         repeat
             aiCharacter = Character:new(
@@ -150,18 +156,16 @@ local function GenerateWorld()
         table.insert(aiCharacters, aiCharacter)
     end
 
-    -- Add fruit to a percentage of the cells
-    for x = 1, width do
-        for y = 1, height do
-            if #Fruits < MAX_FRUIT and love.math.random() < FRUIT_PERCENTAGE then
-                if tiles[x][y].Alive or love.math.random() < 0.5 then
-                    local fruitIndex = randomInt(1, #fruitImages)
-                    local fruitImage = fruitImages[fruitIndex]
-                    table.insert(Fruits, { x = x, y = y, image = fruitImage })
-                end
-            end
+    -- Add fruit
+    repeat
+        local x = randomInt(1, width)
+        local y = randomInt(1, height)
+        if tiles[x][y].Alive or love.math.random() < 0.85 then         -- 85% chance of spawning fruit on a dead cell
+            local fruitIndex = randomInt(1, #fruitImages)
+            local fruitImage = fruitImages[fruitIndex]
+            table.insert(Fruits, { x = x, y = y, image = fruitImage })
         end
-    end
+    until #Fruits >= maxFruit
 end
 
 local function GenerateGroundColors()
@@ -238,6 +242,9 @@ end
 
 local dragging = false
 
+
+-- LOVE FUNCTIONS
+
 function love.load(arg)
     love.window.setMode(WINDOW_WIDTH, WINDOW_HEIGHT)
     loadFruitImages()
@@ -298,6 +305,8 @@ function love.draw(dt)
         love.graphics.setColor(0, 1, 0)
         love.graphics.rectangle("line", playerView.x, playerView.y, playerView.width, playerView.height)
         -- Draw debug squares on world tiles
+    end
+    if MAP_DEBUG then
         world:drawTileDebugSquares()
     end
 
