@@ -1,6 +1,6 @@
-UI_DEBUG = true
+UI_DEBUG = false
 PATH_DEBUG = false
-DEBUG = false
+DEBUG = true
 SCALE = 1
 
 WINDOW_WIDTH = 800
