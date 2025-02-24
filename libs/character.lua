@@ -201,7 +201,7 @@ function Character:moveToNextStep(dt)
                 return self.world:tileIsAliveAtPosition(pos.x, pos.y)
             end
 
-            local pathfinder = Luafinding(Vector(startX, startY), Vector(endX, endY), positionOpenCheck, false)
+            local pathfinder = Luafinding(Vector(startX, startY), Vector(endX, endY), positionOpenCheck, true) -- Enable diagonal movement
             self.path = pathfinder:GetPath()
             if PATH_DEBUG and self.path then
                 print("Got path for AI " .. self.id .. ": " .. #self.path)

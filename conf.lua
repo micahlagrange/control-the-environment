@@ -4,8 +4,8 @@ DEBUG = false
 MAP_DEBUG = false
 SCALE = 1
 
-WINDOW_WIDTH = 800
-WINDOW_HEIGHT = 600
+WINDOW_WIDTH = 1200
+WINDOW_HEIGHT = 800
 WORLD_WIDTH = 600
 WORLD_HEIGHT = 600
 TILE_SIZE = 16
@@ -15,7 +15,7 @@ GROUND_AUTOMATA_RATIO = 29
 GROUND_UPDATE_LIMIT = 20
 CHARACTER_SIZE = TILE_SIZE * .8
 PLAYER_VIEW_MOVE_SPEED = 1000
-ZOOM_LEVEL = 1 -- Configurable zoom level
+ZOOM_LEVEL = 2 -- Configurable zoom level
 
 function love.conf(t)
     t.title = "GameNameGoesHere"
