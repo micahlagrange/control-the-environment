@@ -1,11 +1,12 @@
 love.graphics.setDefaultFilter("nearest", "nearest")
 
-local tiles = {}
+local tiles     = {}
 
 -- libs
 local Character = require("libs.character")
 
 -- src classes
+local Util      = require("src.util")
 require("src.constants")
 local Camera         = require("libs.camera")
 local camera         = Camera:new(0, 0, ZOOM_LEVEL)
@@ -160,7 +161,7 @@ local function GenerateWorld()
     repeat
         local x = randomInt(1, width)
         local y = randomInt(1, height)
-        if tiles[x][y].Alive or love.math.random() < 0.85 then         -- 85% chance of spawning fruit on a dead cell
+        if tiles[x][y].Alive or love.math.random() < 0.85 then -- 85% chance of spawning fruit on a dead cell
             local fruitIndex = randomInt(1, #fruitImages)
             local fruitImage = fruitImages[fruitIndex]
             table.insert(Fruits, { x = x, y = y, image = fruitImage })
@@ -185,7 +186,7 @@ end
 
 local function startGame()
     love.math.setRandomSeed(tonumber(seed) or seed:byte(1, -1)) -- set the seed for reproducibility, always coerce it to a number
-    
+
     loadAICharacterImage()
     GenerateWorld()
     GenerateGroundColors()
@@ -291,6 +292,17 @@ function love.draw(dt)
                 love.graphics.setColor(0, 1, 0)
                 love.graphics.rectangle("line", (fruit.x - 1) * TILE_SIZE, (fruit.y - 1) * TILE_SIZE, TILE_SIZE,
                     TILE_SIZE)
+            end
+            if ANIMATION_DEBUG then
+                -- Highlight the whole tile with transparent white
+                love.graphics.setColor(1, 1, 1, 0.5)
+                love.graphics.rectangle("fill", (fruit.x - 1) * TILE_SIZE, (fruit.y - 1) * TILE_SIZE, TILE_SIZE,
+                    TILE_SIZE)
+
+                -- Draw the tile coordinates below the fruit
+                love.graphics.setColor(1, 1, 1)
+                love.graphics.print("(" .. fruit.x .. ", " .. fruit.y .. ")", (fruit.x - 1) * TILE_SIZE,
+                    (fruit.y) * TILE_SIZE)
             end
         end
     end

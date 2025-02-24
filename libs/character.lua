@@ -153,7 +153,8 @@ function Character:draw()
         local frameX = (self.animation.currentFrame - 1) * self.animation.frameWidth
         love.graphics.draw(self.animation.image,
             love.graphics.newQuad(frameX, 0, self.animation.frameWidth, self.animation.frameHeight,
-                self.animation.image:getDimensions()), self.x + self.width / 2, self.y - self.height * (visualScaleY / 2), 0,
+                self.animation.image:getDimensions()), self.x + self.width / 2, self.y - self.height * (visualScaleY / 2),
+            0,
             scaleX * visualScaleX * (self.width / self.animation.frameWidth),
             visualScaleY * (self.height / self.animation.frameHeight),
             self.animation.frameWidth / 2, 0)
@@ -186,7 +187,6 @@ function Character:draw()
         love.graphics.print("Next: (" .. nextStep.x .. ", " .. nextStep.y .. ")", self.x, self.y + self.height + 10)
         love.graphics.print("Current: (" .. currentTilePos.x .. ", " .. currentTilePos.y .. ")", self.x, self.y - 20)
         love.graphics.print("Target: (" .. self.targetFruit.x .. ", " .. self.targetFruit.y .. ")", self.x, self.y - 30)
-        
     end
     if ANIMATION_DEBUG then
         -- Draw a larger point on the tile the AI character is standing on
