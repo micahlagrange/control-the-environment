@@ -97,7 +97,11 @@ local function applyCellularAutomata(grid, width, height, passes, birthLimit, de
                 end
             end
         end
-        grid = newGrid
+        for x = 1, width do
+            for y = 1, height do
+                grid[x][y].Alive = newGrid[x][y].Alive
+            end
+        end
     end
     return grid
 end
@@ -105,18 +109,23 @@ end
 local function GenerateWorld()
     -- nasty globals
     Fruits = {}
-    -- tiles = {} -- empty the world OOPS THIS BROKE IT?
     local width = WORLD_WIDTH / TILE_SIZE
     local height = WORLD_HEIGHT / TILE_SIZE
 
     for x = 1, width do
-        tiles[x] = {}
+        if not tiles[x] then
+            tiles[x] = {}
+        end
         for y = 1, height do
-            tiles[x][y] = { Alive = randomInt(0, 100) < WORLD_AUTOMATA_RATIO }
+            if not tiles[x][y] then
+                tiles[x][y] = { Alive = randomInt(0, 100) < WORLD_AUTOMATA_RATIO }
+            else
+                tiles[x][y].Alive = randomInt(0, 100) < WORLD_AUTOMATA_RATIO
+            end
         end
     end
 
-    tiles = applyCellularAutomata(tiles, width, height, WORLD_UPDATE_LIMIT, 3, 3)
+    applyCellularAutomata(tiles, width, height, WORLD_UPDATE_LIMIT, 3, 3)
 
     -- Ensure the playerView spawns in a live cell
     repeat
