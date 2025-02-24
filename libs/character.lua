@@ -141,9 +141,11 @@ function Character:draw()
                 self.animation = self.leftrightanimation
             elseif nextStep.x > currentTilePos.x then
                 self.animation = self.leftrightanimation
-                scaleX = -1 -- Flip horizontally if moving left
-            elseif nextStep.y < currentTilePos.y then
+                scaleX = -1 -- Flip horizontally if moving right, since we only have a left walking version
+            elseif nextStep.y > currentTilePos.y then
                 self.animation = self.downanimation
+            elseif nextStep.y == currentTilePos.y and nextStep.x == currentTilePos.x then
+                -- target is in the same tile, just keep the same animation
             else
                 self.animation = self.upanimation
             end
