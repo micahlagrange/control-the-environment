@@ -1,7 +1,7 @@
 local Character = require("libs.character")
 local Camera    = require("libs.camera")
 local UI        = require("src.ui")
-local abilities = require("src.abilities")
+local Abilities = require("src.abilities")
 require("src.constants")
 
 love.graphics.setDefaultFilter("nearest", "nearest")
@@ -239,6 +239,7 @@ end
 local dragging = false
 
 function love.load(arg)
+    abilities = Abilities:new()
     love.window.setMode(WINDOW_WIDTH, WINDOW_HEIGHT)
     loadFruitImages()
     startGame()

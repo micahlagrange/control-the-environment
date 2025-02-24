@@ -1,6 +1,9 @@
 local UI = {}
 UI.__index = UI
 
+local plainCursor = love.graphics.newImage("assets/images/UI/cursor_plain.png")
+local digCursor = love.graphics.newImage("assets/images/UI/dig_icon.png")
+
 function UI:new()
     local self = setmetatable({}, UI)
     self.width = WINDOW_WIDTH
@@ -8,6 +11,7 @@ function UI:new()
     self.gridWidth = self.width / 16
     self.gridHeight = self.height / 16
     self.buttons = {}
+    self.cursorImage = plainCursor
     return self
 end
 
@@ -42,6 +46,10 @@ end
 function UI:draw()
     local buttonWidth = self.width / 16
     local buttonHeight = self.height / 16
+
+    -- draw cursor
+    love.graphics.draw(self.cursorImage, love.mouse.getX(), love.mouse.getY())
+
     for i, button in ipairs(self.buttons) do
         love.graphics.setColor(0.5, 0.5, 0.5)
         love.graphics.rectangle("fill", button.x * buttonWidth, button.y * buttonHeight, buttonWidth, buttonHeight)
@@ -53,6 +61,16 @@ function UI:draw()
         love.graphics.print(button.label, button.x * buttonWidth + (buttonWidth - textWidth) / 2,
             button.y * buttonHeight + (buttonHeight - textHeight) / 2)
     end
+end
+
+function UI:setCursorImage(ability)
+    local image
+    if ability == ABILITY_DIG then
+        image = love.graphics.newImage(digCursor)
+    else
+        image = love.graphics.newImage(plainCursor)
+    end
+    self.cursorImage = image
 end
 
 return UI

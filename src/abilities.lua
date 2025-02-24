@@ -40,5 +40,8 @@ function Abilities:selectAbility(ability)
     end
 end
 
+function Abilities:readyAbility(ability)
+    self.selectedAbility = ability
+end
 
 return Abilities
