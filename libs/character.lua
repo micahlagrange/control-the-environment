@@ -1,10 +1,14 @@
-local Luafinding   = require("libs.luafinding")
-local Util         = require("src.util")
-local Character    = {}
-local Vector       = require("libs.vector")
-Character.__index  = Character
+local Luafinding         = require("libs.luafinding")
+local Util               = require("src.util")
+local Character          = {}
+local Vector             = require("libs.vector")
+Character.__index        = Character
 
-Character.AI_SPEED = 30 -- Set AI speed variable
+Character.AI_SPEED       = 100 -- Set AI speed variable
+
+local walkLeftRightImage = love.graphics.newImage("assets/images/guys/whitecollarwalk.png")
+local walkUpImage    = love.graphics.newImage("assets/images/guys/upwalk.png")
+local walkDownImage    = love.graphics.newImage("assets/images/guys/downwalk.png")
 
 function Character:new(world, x, y, width, height, image)
     local self = setmetatable({}, Character)
@@ -17,8 +21,8 @@ function Character:new(world, x, y, width, height, image)
     self.id = nil            -- Add identifier property
     self.targetFruit = nil   -- Add targetFruit property
     self.complaining = false -- Add complaining property
-    self.animation = {
-        image = love.graphics.newImage("assets/images/guys/whitecollarwalk.png"),
+    self.leftrightanimation = {
+        image = walkLeftRightImage,
         frameWidth = 16,
         frameHeight = 16,
         currentFrame = 1,
@@ -26,6 +30,25 @@ function Character:new(world, x, y, width, height, image)
         frameDuration = 0.1,
         time = 0
     }
+    self.downanimation = {
+        image = walkDownImage,
+        frameWidth = 16,
+        frameHeight = 16,
+        currentFrame = 1,
+        totalFrames = 4,
+        frameDuration = 0.1,
+        time = 0
+    }
+    self.upanimation = {
+        image = walkUpImage,
+        frameWidth = 16,
+        frameHeight = 16,
+        currentFrame = 1,
+        totalFrames = 4,
+        frameDuration = 0.1,
+        time = 0,
+    }
+    self.animation = self.leftrightanimation
     self.world = world
     if image then
         self.image = image
@@ -35,6 +58,7 @@ end
 
 function Character:updateAnimation(dt)
     self.animation.time = self.animation.time + dt
+    local offset = self.animation.offset or 0
     if self.animation.time >= self.animation.frameDuration then
         self.animation.time = self.animation.time - self.animation.frameDuration
         self.animation.currentFrame = self.animation.currentFrame % self.animation.totalFrames + 1
@@ -110,9 +134,16 @@ function Character:draw()
         local scaleX = 1
         if self.path and #self.path > 0 then
             local nextStep = self.path[self.pathIndex]
-            local targetPos = Util.tileToWorldSpace(nextStep.x, nextStep.y)
-            if targetPos.x > self.x then
+            local currentTilePos = Util.worldToTileSpace(self.x, self.y)
+            if nextStep.y < currentTilePos.y then
+                self.animation = self.upanimation
+            elseif nextStep.y > currentTilePos.y then
+                self.animation = self.downanimation
+            elseif nextStep.x > currentTilePos.x then
+                self.animation = self.leftrightanimation
                 scaleX = -1 -- Flip horizontally if moving left
+            else
+                self.animation = self.leftrightanimation
             end
         end
         local frameX = (self.animation.currentFrame - 1) * self.animation.frameWidth
@@ -203,7 +234,9 @@ function Character:moveToNextStep(dt)
                 if self.pathIndex > #self.path then
                     -- Reached the target
                     if self.targetFruit then
-                        print("Reached target fruit at " .. self.targetFruit.x .. ", " .. self.targetFruit.y)
+                        if PATH_DEBUG then
+                            print("Reached target fruit at " .. self.targetFruit.x .. ", " .. self.targetFruit.y)
+                        end
                         Util.removeEntityAtTile(Fruits, self.targetFruit.x, self.targetFruit.y)
                         self.targetFruit = nil
                         self.path = nil
