@@ -269,8 +269,8 @@ function love.load(arg)
         inputActive = true
         inputText = ""
     end)
-    -- ui:addButton(SYSTEM_INCREASE_PASSES, 18, 1, function() worldUpdateLimit = worldUpdateLimit + 1; startGame() end)
-    -- ui:addButton(SYSTEM_DECREASE_PASSES, 18, 2, function() worldUpdateLimit = worldUpdateLimit + -1; startGame() end)
+    ui:addButton(SYSTEM_INCREASE_UPDATES, 18, 1, function() worldUpdateLimit = worldUpdateLimit + 1; startGame() end)
+    ui:addButton(SYSTEM_DECREASE_UPDATES, 18, 2, function() worldUpdateLimit = worldUpdateLimit + -1; startGame() end)
 end
 
 function love.update(dt)

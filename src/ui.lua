@@ -9,6 +9,8 @@ local digCursor = love.graphics.newImage("assets/images/UI/dig_icon.png")
 local exitButtonImage = love.graphics.newImage("assets/images/UI/exit_button.png")
 local reloadButtonImage = love.graphics.newImage("assets/images/UI/reload_button.png")
 local changeSeedButtonImage = love.graphics.newImage("assets/images/UI/seed_button.png")
+local increaseUpdatesButtonImage = love.graphics.newImage("assets/images/UI/increase_world_updates_btn.png")
+local decreaseUpdatesButtonImage = love.graphics.newImage("assets/images/UI/decrease_world_updates_btn.png")
 
 love.mouse.setVisible(false)
 
@@ -72,6 +74,12 @@ function UI:doButtonClick(clickedButton)
         if clickedButton.label == SYSTEM_CHANGE_SEED then
             clickedButton.actionClosure()
         end
+        if clickedButton.label == SYSTEM_INCREASE_UPDATES then
+            clickedButton.actionClosure()
+        end
+        if clickedButton.label == SYSTEM_DECREASE_UPDATES then
+            clickedButton.actionClosure()
+        end
     end
     return clickedButton.label
 end
@@ -85,6 +93,8 @@ local function getTypeFromLabel(label)
         return BUTTON_TYPE_ABILITY
     elseif label == SYSTEM_EXIT or
         label == SYSTEM_RELOAD or
+        label == SYSTEM_INCREASE_UPDATES or
+        label == SYSTEM_DECREASE_UPDATES or
         label == SYSTEM_CHANGE_SEED then
         return BUTTON_TYPE_SYSTEM
     end
@@ -106,6 +116,12 @@ local function getImageFromLabel(label)
     end
     if label == SYSTEM_CHANGE_SEED then
         return changeSeedButtonImage
+    end
+    if label == SYSTEM_INCREASE_UPDATES then
+        return increaseUpdatesButtonImage
+    end
+    if label == SYSTEM_DECREASE_UPDATES then
+        return decreaseUpdatesButtonImage
     end
     return nil
 end
