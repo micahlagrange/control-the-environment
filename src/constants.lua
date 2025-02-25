@@ -13,8 +13,9 @@ BUTTON_TYPE_SYSTEM  = "system"
 -- System button labels
 SYSTEM_EXIT         = "exit"
 SYSTEM_RELOAD       = "reload"
+SYSTEM_CHANGE_SEED  = "changeseed"
 
-DEFAULT_SEED        = "defaultseed" -- if the player does not set a seed, use this
+DEFAULT_SEED        = "i" -- if the player does not set a seed, use this
 FRUIT_PERCENTAGE    = 0.004         -- How often do fruit spawn
 MAX_FRUIT           = 10            -- Max number of fruits to spawn
 

@@ -31,4 +31,12 @@ function Scoring:getFinalScore()
     return self.fruits - self.complaints + self.icks + self.actions
 end
 
+function Scoring:reset()
+    self.complaints = 0
+    self.icks = 0
+    self.actions = 0
+    self.fruits = 0
+    self.score = 0
+end
+
 return Scoring

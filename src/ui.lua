@@ -1,3 +1,4 @@
+
 local UI = {}
 UI.__index = UI
 
@@ -7,10 +8,11 @@ local plainCursor = love.graphics.newImage("assets/images/UI/cursor_plain.png")
 local digCursor = love.graphics.newImage("assets/images/UI/dig_icon.png")
 local exitButtonImage = love.graphics.newImage("assets/images/UI/exit_button.png")
 local reloadButtonImage = love.graphics.newImage("assets/images/UI/reload_button.png")
+local changeSeedButtonImage = love.graphics.newImage("assets/images/UI/seed_button.png")
+
+love.mouse.setVisible(false)
 
 function UI:new(abilities, camera, scoring)
-    love.mouse.setVisible(false)
-
     self.abilities = abilities
     self.camera = camera
     self.scoring = scoring
@@ -23,7 +25,9 @@ function UI:new(abilities, camera, scoring)
     self.buttons = {}
     self.cursorImage = plainCursor
 
-    love.graphics.setFont(love.graphics.newFont('assets/fonts/commodore64.ttf', 18))
+    self.isWaitingForInput = false
+
+    love.graphics.setFont(love.graphics.newFont('assets/fonts/commodore64.ttf', 12))
     return self
 end
 
@@ -53,7 +57,7 @@ end
 
 function UI:doButtonClick(clickedButton)
     if UI_DEBUG then
-        print( clickedButton.buttonType .. " button clicked: " .. clickedButton.label)
+        print(clickedButton.buttonType .. " button clicked: " .. clickedButton.label)
     end
     if clickedButton.buttonType == BUTTON_TYPE_ABILITY then
         self.abilities:selectAbility(clickedButton.label)
@@ -65,14 +69,23 @@ function UI:doButtonClick(clickedButton)
         if clickedButton.label == SYSTEM_RELOAD then
             clickedButton.actionClosure()
         end
+        if clickedButton.label == SYSTEM_CHANGE_SEED then
+            clickedButton.actionClosure()
+        end
     end
     return clickedButton.label
 end
 
 local function getTypeFromLabel(label)
-    if label == ABILITY_DIG or label == ABILITY_EXPLODE or label == ABILITY_LINE or label == ABILITY_DRAG or ABILITY_SELECT then
+    if label == ABILITY_DIG or
+        label == ABILITY_EXPLODE or
+        label == ABILITY_LINE or
+        label == ABILITY_DRAG or
+        label == ABILITY_SELECT then
         return BUTTON_TYPE_ABILITY
-    elseif label == SYSTEM_EXIT or SYSTEM_RELOAD then
+    elseif label == SYSTEM_EXIT or
+        label == SYSTEM_RELOAD or
+        label == SYSTEM_CHANGE_SEED then
         return BUTTON_TYPE_SYSTEM
     end
     return nil
@@ -91,6 +104,9 @@ local function getImageFromLabel(label)
     if label == SYSTEM_RELOAD then
         return reloadButtonImage
     end
+    if label == SYSTEM_CHANGE_SEED then
+        return changeSeedButtonImage
+    end
     return nil
 end
 
@@ -105,10 +121,8 @@ function UI:addButton(label, x, y, actionClosure)
         y = y,
         buttonType = getTypeFromLabel(label),
         image = getImageFromLabel(label),
+        actionClosure = actionClosure,
     }
-    if actionClosure then
-        button.actionClosure = actionClosure
-    end
     table.insert(self.buttons, button)
     return button
 end

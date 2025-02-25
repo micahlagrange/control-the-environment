@@ -8,28 +8,36 @@ local Character = require("libs.character")
 -- src classes
 local Util      = require("src.util")
 require("src.constants")
-local Camera         = require("src.camera")
-local camera         = Camera:new(0, 0, ZOOM_LEVEL)
-local World          = require("src.world")
-local world          = World:new(tiles, camera)
-local Scoring          = require("src.scoring")
-local scoring          = Scoring:new()
-local Abilities      = require("src.abilities")
-local abilities      = Abilities:new(world, scoring)
+local Camera       = require("src.camera")
+local camera       = Camera:new(0, 0, ZOOM_LEVEL)
+local World        = require("src.world")
+local world        = World:new(tiles, camera)
+local Scoring      = require("src.scoring")
+local scoring      = Scoring:new()
+local Abilities    = require("src.abilities")
+local abilities    = Abilities:new(world, scoring)
 
 -- UI
-local UI             = require("src.ui")
-local ui             = UI:new(abilities, camera, scoring)
+local UI           = require("src.ui")
+local ui           = UI:new(abilities, camera, scoring)
 
 -- Locals
-local aiCharacters   = {}
-local fruitImages    = {}
-local playerView     = Character:new(world, WORLD_WIDTH / 2, WORLD_HEIGHT / 2, CHARACTER_SIZE, CHARACTER_SIZE, scoring)
+local aiCharacters = {}
+local fruitImages  = {}
+local playerView   = Character:new(world, WORLD_WIDTH / 2, WORLD_HEIGHT / 2, CHARACTER_SIZE, CHARACTER_SIZE, scoring)
+local dragging     = false
+local inputActive  = false
+local inputText    = ""
 
-local seed           = DEFAULT_SEED
-local worldArea      = WORLD_WIDTH * WORLD_HEIGHT
-local maxCapitalists = math.floor(worldArea / 100000)
-local maxFruit       = maxCapitalists * 2
+
+local seed                = DEFAULT_SEED
+local worldArea           = WORLD_WIDTH * WORLD_HEIGHT
+local maxCapitalists      = math.floor(worldArea / 100000)
+local maxFruit            = maxCapitalists * 2
+local worldUpdateLimit    = WORLD_UPDATE_LIMIT
+local worldAutomataRatio  = WORLD_AUTOMATA_RATIO
+local groundUpdateLimit   = GROUND_UPDATE_LIMIT
+local groundAutomataRatio = GROUND_AUTOMATA_RATIO
 
 -- Constants / vars
 local function hexToRgb(hex)
@@ -114,19 +122,24 @@ local function GenerateWorld()
         end
         for y = 1, height do
             if not tiles[x][y] then
-                tiles[x][y] = { Alive = randomInt(0, 100) < WORLD_AUTOMATA_RATIO }
+                tiles[x][y] = { Alive = randomInt(0, 100) < worldAutomataRatio }
             else
-                tiles[x][y].Alive = randomInt(0, 100) < WORLD_AUTOMATA_RATIO
+                tiles[x][y].Alive = randomInt(0, 100) < worldAutomataRatio
             end
         end
     end
 
-    applyCellularAutomata(tiles, width, height, WORLD_UPDATE_LIMIT, 3, 3)
+    applyCellularAutomata(tiles, width, height, worldUpdateLimit, 3, 3)
 
     -- Add AI characters
     if DEBUG then
         print("Adding " .. maxCapitalists .. " AI characters")
     end
+    -- Empty out aiCharacters without reassigning the table
+    for i = #aiCharacters, 1, -1 do
+        aiCharacters[i] = nil
+    end
+
     for i = 1, maxCapitalists do
         local aiCharacter
         repeat
@@ -147,10 +160,15 @@ local function GenerateWorld()
     repeat
         local x = randomInt(1, width)
         local y = randomInt(1, height)
-        if tiles[x][y].Alive or love.math.random() < 0.85 then -- 85% chance of spawning fruit on a dead cell
-            local fruitIndex = randomInt(1, #fruitImages)
-            local fruitImage = fruitImages[fruitIndex]
-            table.insert(Fruits, { x = x, y = y, image = fruitImage })
+        if not tiles[x] or not tiles[x][y] then
+            -- no idea why, but it fails here when the seed contains only 's' or 'i' .......
+            print("Invalid tile at " .. x .. ", " .. y)
+        else
+            if tiles[x][y].Alive or love.math.random() < 0.85 then -- 85% chance of spawning fruit on a dead cell
+                local fruitIndex = randomInt(1, #fruitImages)
+                local fruitImage = fruitImages[fruitIndex]
+                table.insert(Fruits, { x = x, y = y, image = fruitImage })
+            end
         end
     until #Fruits >= maxFruit
 end
@@ -163,34 +181,37 @@ local function GenerateGroundColors()
     for x = 1, width do
         GroundColors[x] = {}
         for y = 1, height do
-            GroundColors[x][y] = { Alive = randomInt(0, 100) < GROUND_AUTOMATA_RATIO }
+            GroundColors[x][y] = { Alive = randomInt(0, 100) < groundAutomataRatio }
         end
     end
 
-    GroundColors = applyCellularAutomata(GroundColors, width, height, GROUND_UPDATE_LIMIT, 3, 3)
+    GroundColors = applyCellularAutomata(GroundColors, width, height, groundUpdateLimit, 3, 3)
 end
 
 local function startGame()
     print("Starting game with seed: " .. seed)
     love.math.setRandomSeed(tonumber(seed) or seed:byte(1, -1)) -- set the seed for reproducibility, always coerce it to a number
 
+    scoring:reset()
     GenerateWorld()
     GenerateGroundColors()
 end
 
 local function updatePlayerView(dt)
     local dx, dy = 0, 0
-    if love.keyboard.isDown("w") or love.keyboard.isDown("up") then
-        dy = dy - 1
-    end
-    if love.keyboard.isDown("s") or love.keyboard.isDown("down") then
-        dy = dy + 1
-    end
-    if love.keyboard.isDown("a") or love.keyboard.isDown("left") then
-        dx = dx - 1
-    end
-    if love.keyboard.isDown("d") or love.keyboard.isDown("right") then
-        dx = dx + 1
+    if not inputActive then
+        if love.keyboard.isDown("w") or love.keyboard.isDown("up") then
+            dy = dy - 1
+        end
+        if love.keyboard.isDown("s") or love.keyboard.isDown("down") then
+            dy = dy + 1
+        end
+        if love.keyboard.isDown("a") or love.keyboard.isDown("left") then
+            dx = dx - 1
+        end
+        if love.keyboard.isDown("d") or love.keyboard.isDown("right") then
+            dx = dx + 1
+        end
     end
 
     -- Normalize the movement vector
@@ -229,8 +250,10 @@ local function updateAICharacters(dt)
     end
 end
 
-local dragging = false
-
+local function startGameWithNewSeed(newSeed)
+    seed = newSeed
+    startGame()
+end
 
 -- LOVE FUNCTIONS
 
@@ -242,14 +265,22 @@ function love.load(arg)
     ui:addButton(ABILITY_DIG, 1, 3)
     ui:addButton(SYSTEM_EXIT, 19, 15)
     ui:addButton(SYSTEM_RELOAD, 19, 1, function() startGame() end)
+    ui:addButton(SYSTEM_CHANGE_SEED, 19, 3, function()
+        inputActive = true
+        inputText = ""
+    end)
+    -- ui:addButton(SYSTEM_INCREASE_PASSES, 18, 1, function() worldUpdateLimit = worldUpdateLimit + 1; startGame() end)
+    -- ui:addButton(SYSTEM_DECREASE_PASSES, 18, 2, function() worldUpdateLimit = worldUpdateLimit + -1; startGame() end)
 end
 
 function love.update(dt)
-    updatePlayerView(dt)
-    updateAICharacters(dt)
+    if not inputActive then
+        updatePlayerView(dt)
+        updateAICharacters(dt)
 
-    -- Update camera position
-    camera:update(dt, playerView.x, playerView.y, playerView.width, playerView.height, WINDOW_WIDTH, WINDOW_HEIGHT)
+        -- Update camera position
+        camera:update(dt, playerView.x, playerView.y, playerView.width, playerView.height, WINDOW_WIDTH, WINDOW_HEIGHT)
+    end
 end
 
 function love.draw(dt)
@@ -306,7 +337,6 @@ function love.draw(dt)
         -- Draw debug box around playerView
         love.graphics.setColor(0, 1, 0)
         love.graphics.rectangle("line", playerView.x, playerView.y, playerView.width, playerView.height)
-        -- Draw debug squares on world tiles
     end
     if MAP_DEBUG then
         world:drawTileDebugSquares()
@@ -324,15 +354,41 @@ function love.draw(dt)
     camera:reset()
     -- draw ui last
     ui:draw()
+
+    if inputActive then
+        love.graphics.setColor(0, 0, 0, 0.5)
+        love.graphics.rectangle("fill", 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT)
+        love.graphics.setColor(1, 1, 1)
+        love.graphics.printf("Enter new seed: " .. inputText, 0, WINDOW_HEIGHT / 2, WINDOW_WIDTH, "center")
+    end
+end
+
+function love.keypressed(key)
+    if inputActive then
+        if key == "return" then
+            inputActive = false
+            startGameWithNewSeed(inputText)
+        elseif key == "backspace" then
+            inputText = inputText:sub(1, -2)
+        end
+    end
+end
+
+function love.textinput(t)
+    if inputActive then
+        inputText = inputText .. t
+    end
 end
 
 function love.keyreleased(key)
-    if key == "escape" then
-        love.event.quit()
-    elseif key == "=" or key == "+" then
-        camera:zoom(1.1)
-    elseif key == "-" then
-        camera:zoom(0.9)
+    if not inputActive then
+        if key == "escape" then
+            love.event.quit()
+        elseif key == "=" or key == "+" then
+            camera:zoom(1.1)
+        elseif key == "-" then
+            camera:zoom(0.9)
+        end
     end
 end
 
