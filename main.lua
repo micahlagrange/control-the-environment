@@ -12,15 +12,19 @@ local Camera         = require("src.camera")
 local camera         = Camera:new(0, 0, ZOOM_LEVEL)
 local World          = require("src.world")
 local world          = World:new(tiles, camera)
+local Scoring          = require("src.scoring")
+local scoring          = Scoring:new()
 local Abilities      = require("src.abilities")
-local abilities      = Abilities:new(world)
+local abilities      = Abilities:new(world, scoring)
+
+-- UI
 local UI             = require("src.ui")
-local ui             = UI:new(abilities, camera)
+local ui             = UI:new(abilities, camera, scoring)
 
 -- Locals
 local aiCharacters   = {}
 local fruitImages    = {}
-local playerView     = Character:new(world, WORLD_WIDTH / 2, WORLD_HEIGHT / 2, CHARACTER_SIZE, CHARACTER_SIZE)
+local playerView     = Character:new(world, WORLD_WIDTH / 2, WORLD_HEIGHT / 2, CHARACTER_SIZE, CHARACTER_SIZE, scoring)
 
 local seed           = DEFAULT_SEED
 local worldArea      = WORLD_WIDTH * WORLD_HEIGHT
@@ -132,7 +136,7 @@ local function GenerateWorld()
                 randomInt(1, WORLD_HEIGHT),
                 CHARACTER_SIZE,
                 CHARACTER_SIZE,
-                aiCharacterImage
+                scoring
             )
         until isCharacterPositionValid(aiCharacter.x, aiCharacter.y)
         aiCharacter.id = #aiCharacters + 1
@@ -167,6 +171,7 @@ local function GenerateGroundColors()
 end
 
 local function startGame()
+    print("Starting game with seed: " .. seed)
     love.math.setRandomSeed(tonumber(seed) or seed:byte(1, -1)) -- set the seed for reproducibility, always coerce it to a number
 
     GenerateWorld()
@@ -208,9 +213,6 @@ end
 local fruitUpdateTimer = 0
 local fruitUpdateInterval = 1 -- seconds
 local giveUpTimer = 0
-local giveUpInterval = 5      -- seconds
-local retryIckTimer = 0
-local retryIckInterval = 10   -- seconds
 
 local function updateAICharacters(dt)
     fruitUpdateTimer = fruitUpdateTimer + dt
@@ -236,9 +238,10 @@ function love.load(arg)
     love.window.setMode(WINDOW_WIDTH, WINDOW_HEIGHT)
     loadFruitImages()
     startGame()
-    ui:addButton(ABILITY_SELECT, 2, 15)
-    ui:addButton(ABILITY_DIG, 4, 15)
-    ui:addButton(SYSTEM_EXIT, 15, 0)
+    ui:addButton(ABILITY_SELECT, 1, 1)
+    ui:addButton(ABILITY_DIG, 1, 3)
+    ui:addButton(SYSTEM_EXIT, 19, 15)
+    ui:addButton(SYSTEM_RELOAD, 19, 1, function() startGame() end)
 end
 
 function love.update(dt)

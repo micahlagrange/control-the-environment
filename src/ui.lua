@@ -1,21 +1,25 @@
 local UI = {}
 UI.__index = UI
 
+local gridHSize = 20
+local gridVSize = 16
 local plainCursor = love.graphics.newImage("assets/images/UI/cursor_plain.png")
 local digCursor = love.graphics.newImage("assets/images/UI/dig_icon.png")
 local exitButtonImage = love.graphics.newImage("assets/images/UI/exit_button.png")
+local reloadButtonImage = love.graphics.newImage("assets/images/UI/reload_button.png")
 
-function UI:new(abilities, camera)
+function UI:new(abilities, camera, scoring)
     love.mouse.setVisible(false)
 
     self.abilities = abilities
     self.camera = camera
+    self.scoring = scoring
 
     local self = setmetatable({}, UI)
     self.width = WINDOW_WIDTH
     self.height = WINDOW_HEIGHT
-    self.gridWidth = self.width / 16
-    self.gridHeight = self.height / 16
+    self.gridWidth = self.width / gridHSize
+    self.gridHeight = self.height / gridVSize
     self.buttons = {}
     self.cursorImage = plainCursor
 
@@ -30,14 +34,14 @@ function UI:screenToUIGridSpace(x, y)
     }
 end
 
--- UI coordinate space is 16x16, so we need to convert screen space to UI space for mouse clicks
+-- UI coordinate space is 16x20, so we need to convert screen space to UI space for mouse clicks
 -- to determine which UI coordinates were clicked
 function UI:clickedButton(x, y)
     local grid = self:screenToUIGridSpace(x, y)
     if UI_DEBUG then
         local uipos = self:screenToUIGridSpace(x, y)
         print("Clicked coordinates: (screen coords: " .. x .. ", " .. y .. ") "
-            .. "(ui grid: " .. uipos.x .. ", " .. uipos.y .. ")")
+            .. "(ui grid: " .. uipos.x .. ", " .. uipos.y .. "), (button grid: " .. grid.x .. ", " .. grid.y .. ")")
     end
     for _, button in ipairs(self.buttons) do
         if grid.x == button.x and grid.y == button.y then
@@ -49,15 +53,17 @@ end
 
 function UI:doButtonClick(clickedButton)
     if UI_DEBUG then
-        print("Button clicked: " .. clickedButton.label)
+        print( clickedButton.buttonType .. " button clicked: " .. clickedButton.label)
     end
     if clickedButton.buttonType == BUTTON_TYPE_ABILITY then
         self.abilities:selectAbility(clickedButton.label)
         self:setCursorImage(clickedButton.label)
-    end
-    if clickedButton.buttonType == BUTTON_TYPE_SYSTEM then
+    elseif clickedButton.buttonType == BUTTON_TYPE_SYSTEM then
         if clickedButton.label == SYSTEM_EXIT then
             love.event.quit()
+        end
+        if clickedButton.label == SYSTEM_RELOAD then
+            clickedButton.actionClosure()
         end
     end
     return clickedButton.label
@@ -66,8 +72,7 @@ end
 local function getTypeFromLabel(label)
     if label == ABILITY_DIG or label == ABILITY_EXPLODE or label == ABILITY_LINE or label == ABILITY_DRAG or ABILITY_SELECT then
         return BUTTON_TYPE_ABILITY
-    end
-    if label == SYSTEM_EXIT then
+    elseif label == SYSTEM_EXIT or SYSTEM_RELOAD then
         return BUTTON_TYPE_SYSTEM
     end
     return nil
@@ -83,13 +88,17 @@ local function getImageFromLabel(label)
     if label == SYSTEM_EXIT then
         return exitButtonImage
     end
+    if label == SYSTEM_RELOAD then
+        return reloadButtonImage
+    end
     return nil
 end
 
 -- The x and y of the button determine it's placement on screen
--- From UI space X axis - 0 to 15 being the top row, and the Y axis 0 to 15 being the left column
+-- From UI space X axis - 1 to 16 being the top row, and the Y axis 1 to 20 being the left column
 -- The label is the text that will be displayed on the button
-function UI:addButton(label, x, y)
+-- Pass a closure to run it on click
+function UI:addButton(label, x, y, actionClosure)
     local button = {
         label = label,
         x = x,
@@ -97,13 +106,16 @@ function UI:addButton(label, x, y)
         buttonType = getTypeFromLabel(label),
         image = getImageFromLabel(label),
     }
+    if actionClosure then
+        button.actionClosure = actionClosure
+    end
     table.insert(self.buttons, button)
     return button
 end
 
 function UI:draw()
-    local buttonWidth = self.width / 16
-    local buttonHeight = self.height / 16
+    local buttonWidth = self.width / gridHSize
+    local buttonHeight = self.height / gridVSize
 
     for i, button in ipairs(self.buttons) do
         love.graphics.setColor(1, 1, 1)
@@ -128,6 +140,10 @@ function UI:draw()
             btn.label, btn.x * buttonWidth + (buttonWidth - textWidth) / 2,
             btn.y * buttonHeight + (buttonHeight - textHeight) / 2)
     end
+
+    -- draw score
+    love.graphics.setColor(1, 1, 1)
+    love.graphics.print("Score: " .. self.scoring:getFinalScore(), 10, 10)
 
     -- draw cursor last!
     love.graphics.setColor(1, 1, 1)

@@ -10,8 +10,11 @@ local walkLeftRightImage = love.graphics.newImage("assets/images/guys/whitecolla
 local walkUpImage        = love.graphics.newImage("assets/images/guys/upwalk.png")
 local walkDownImage      = love.graphics.newImage("assets/images/guys/downwalk.png")
 
-function Character:new(world, x, y, width, height, image)
+function Character:new(world, x, y, width, height, scoring)
     local self = setmetatable({}, Character)
+
+    self.scoring = scoring
+
     self.x = x
     self.y = y
     self.width = width
@@ -56,6 +59,7 @@ end
 
 function Character:addIck(x, y)
     table.insert(self.icks, { x = x, y = y, timestamp = love.timer.getTime() })
+    self.scoring:incrementIcks()
 end
 
 function Character:targetGivesIck(target)
@@ -114,6 +118,9 @@ function Character:chooseNearestFruit()
 end
 
 function Character:complain()
+    if self.complaining == false then
+        self.scoring:incrementComplaints()
+    end
     self.complaining = true -- Set complaining status
 end
 
@@ -292,6 +299,7 @@ function Character:moveToNextStep(dt)
                         if PATH_DEBUG then
                             print("Reached target fruit at " .. self.targetFruit.x .. ", " .. self.targetFruit.y)
                         end
+                        self.scoring:incrementFruits()
                         Util.removeEntityAtTile(Fruits, self.targetFruit.x, self.targetFruit.y)
                         self.targetFruit = nil
                         self.path = nil

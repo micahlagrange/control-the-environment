@@ -1,6 +1,6 @@
 -- Models
 -- Ability button labels
-ABILITY_SELECT      = "select"   -- regular cursor
+ABILITY_SELECT      = "select" -- regular cursor
 ABILITY_DIG         = "dig"
 ABILITY_EXPLODE     = "explode"
 ABILITY_LINE        = "line"
@@ -12,6 +12,7 @@ BUTTON_TYPE_SYSTEM  = "system"
 
 -- System button labels
 SYSTEM_EXIT         = "exit"
+SYSTEM_RELOAD       = "reload"
 
 DEFAULT_SEED        = "defaultseed" -- if the player does not set a seed, use this
 FRUIT_PERCENTAGE    = 0.004         -- How often do fruit spawn

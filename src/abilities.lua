@@ -3,9 +3,11 @@ require("src.constants")
 local Abilities = {}
 Abilities.__index = Abilities
 
-function Abilities:new(world)
+function Abilities:new(world, scoring)
     local self   = setmetatable({}, Abilities)
     self.world   = world
+    self.scoring = scoring
+
     -- Each ability is not equipped by default
     -- When an ability is used, it's counter goes down. once it reaches zero you can no longer use it
     -- default values
@@ -69,6 +71,7 @@ function Abilities:useAbility()
         self.dig = self.dig - 1
         -- set the clicked tile to be an Alive cell
         self.world:breakWallTileAtMouse()
+        self.scoring:incrementActions()
     elseif self.selectedAbility == ABILITY_EXPLODE then
         self.explode = self.explode - 1
     elseif self.selectedAbility == ABILITY_LINE then
