@@ -16,6 +16,8 @@ SYSTEM_RELOAD           = "reload"
 SYSTEM_CHANGE_SEED      = "changeseed"
 SYSTEM_INCREASE_UPDATES = "increaseupdates"
 SYSTEM_DECREASE_UPDATES = "decreaseupdates"
+SYSTEM_INCREASE_AUTOMATA_RATIO = "increaseautomataratio"
+SYSTEM_DECREASE_AUTOMATA_RATIO = "decreaseautomataratio"
 
 DEFAULT_SEED            = "i"  -- if the player does not set a seed, use this
 FRUIT_PERCENTAGE        = 0.004 -- How often do fruit spawn

@@ -12,7 +12,7 @@ function Scoring:new()
 end
 
 function Scoring:incrementComplaints()
-    self.complaints = self.complaints + 5
+    self.complaints = self.complaints + 10
 end
 
 function Scoring:incrementIcks()
@@ -20,15 +20,15 @@ function Scoring:incrementIcks()
 end
 
 function Scoring:incrementActions()
-    self.actions = self.actions + 1
+    self.actions = self.actions + 5
 end
 
 function Scoring:incrementFruits()
-    self.fruits = self.fruits + 80
+    self.fruits = self.fruits + 50
 end
 
 function Scoring:getFinalScore()
-    return self.fruits - self.complaints + self.icks + self.actions
+    return self.fruits - (self.complaints + self.icks + self.actions)
 end
 
 function Scoring:reset()

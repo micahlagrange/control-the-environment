@@ -31,13 +31,25 @@ local inputText    = ""
 
 
 local seed                = DEFAULT_SEED
-local worldArea           = WORLD_WIDTH * WORLD_HEIGHT
-local maxCapitalists      = math.floor(worldArea / 100000)
-local maxFruit            = maxCapitalists * 2
+local worldWidth          = WORLD_WIDTH
+local worldHeight         = WORLD_HEIGHT
 local worldUpdateLimit    = WORLD_UPDATE_LIMIT
 local worldAutomataRatio  = WORLD_AUTOMATA_RATIO
 local groundUpdateLimit   = GROUND_UPDATE_LIMIT
 local groundAutomataRatio = GROUND_AUTOMATA_RATIO
+local levelsPassed        = 0
+
+local function getMaxCapitalists()
+    return math.floor(worldWidth * worldHeight / 200000)
+end
+
+local function getMaxFruit()
+    return getMaxCapitalists() * 2
+end
+
+local function seedStringToInt(seed)
+    return tonumber(seed) or seed:byte(1, -1)
+end
 
 -- Constants / vars
 local function hexToRgb(hex)
@@ -53,8 +65,7 @@ local function randomInt(min, max)
 end
 
 local function getTileColor(colorTable, x, y)
-    local seed = tonumber(seed) or seed:byte(1, -1)
-    love.math.setRandomSeed(seed + x * 1000 + y)
+    love.math.setRandomSeed(seedStringToInt(seed) + x * 1000 + y)
     local index = randomInt(1, #colorTable)
     return hexToRgb(colorTable[index])
 end
@@ -113,8 +124,8 @@ end
 local function GenerateWorld()
     -- nasty globals
     Fruits = {}
-    local width = WORLD_WIDTH / TILE_SIZE
-    local height = WORLD_HEIGHT / TILE_SIZE
+    local width = worldWidth / TILE_SIZE
+    local height = worldHeight / TILE_SIZE
 
     for x = 1, width do
         if not tiles[x] then
@@ -133,20 +144,20 @@ local function GenerateWorld()
 
     -- Add AI characters
     if DEBUG then
-        print("Adding " .. maxCapitalists .. " AI characters")
+        print("Adding " .. getMaxCapitalists() .. " AI characters")
     end
     -- Empty out aiCharacters without reassigning the table
     for i = #aiCharacters, 1, -1 do
         aiCharacters[i] = nil
     end
 
-    for i = 1, maxCapitalists do
+    for i = 1, getMaxCapitalists() do
         local aiCharacter
         repeat
             aiCharacter = Character:new(
                 world,
-                randomInt(1, WORLD_WIDTH),
-                randomInt(1, WORLD_HEIGHT),
+                randomInt(1, worldWidth),
+                randomInt(1, worldHeight),
                 CHARACTER_SIZE,
                 CHARACTER_SIZE,
                 scoring
@@ -170,13 +181,13 @@ local function GenerateWorld()
                 table.insert(Fruits, { x = x, y = y, image = fruitImage })
             end
         end
-    until #Fruits >= maxFruit
+    until #Fruits >= getMaxFruit()
 end
 
 local function GenerateGroundColors()
     GroundColors = {}
-    local width = WORLD_WIDTH / TILE_SIZE
-    local height = WORLD_HEIGHT / TILE_SIZE
+    local width = worldHeight / TILE_SIZE
+    local height = worldHeight / TILE_SIZE
 
     for x = 1, width do
         GroundColors[x] = {}
@@ -190,9 +201,25 @@ end
 
 local function startGame()
     print("Starting game with seed: " .. seed)
-    love.math.setRandomSeed(tonumber(seed) or seed:byte(1, -1)) -- set the seed for reproducibility, always coerce it to a number
+    love.math.setRandomSeed(seedStringToInt(seed)) -- set the seed for reproducibility, always coerce it to a number
 
     scoring:reset()
+    GenerateWorld()
+    GenerateGroundColors()
+end
+
+local function nextLevel()
+    levelsPassed = levelsPassed + 1
+    love.math.setRandomSeed(seedStringToInt(seed) + levelsPassed)
+
+    if worldAutomataRatio > 1 then
+        worldAutomataRatio = worldAutomataRatio - 1
+    end
+
+    -- increase world area by 10%
+    worldWidth = worldWidth * 1.1
+    worldHeight = worldHeight * 1.1
+
     GenerateWorld()
     GenerateGroundColors()
 end
@@ -255,6 +282,34 @@ local function startGameWithNewSeed(newSeed)
     startGame()
 end
 
+local function increaseWorldAutomataRatio()
+    if worldAutomataRatio < 100 then
+        worldAutomataRatio = worldAutomataRatio + 1
+        startGame()
+    end
+end
+
+local function decreaseWorldAutomataRatio()
+    if worldAutomataRatio > 1 then
+        worldAutomataRatio = worldAutomataRatio - 1
+        startGame()
+    end
+end
+
+local function increaseWorldUpdateLimit()
+    if worldUpdateLimit < 100 then
+        worldUpdateLimit = worldUpdateLimit + 1
+        startGame()
+    end
+end
+
+local function decreaseWorldUpdateLimit()
+    if worldUpdateLimit > 1 then
+        worldUpdateLimit = worldUpdateLimit - 1
+        startGame()
+    end
+end
+
 -- LOVE FUNCTIONS
 
 function love.load(arg)
@@ -269,8 +324,10 @@ function love.load(arg)
         inputActive = true
         inputText = ""
     end)
-    ui:addButton(SYSTEM_INCREASE_UPDATES, 18, 1, function() worldUpdateLimit = worldUpdateLimit + 1; startGame() end)
-    ui:addButton(SYSTEM_DECREASE_UPDATES, 18, 2, function() worldUpdateLimit = worldUpdateLimit + -1; startGame() end)
+    ui:addButton(SYSTEM_INCREASE_UPDATES, 18, 1, increaseWorldUpdateLimit)
+    ui:addButton(SYSTEM_DECREASE_UPDATES, 18, 2, decreaseWorldUpdateLimit)
+    ui:addButton(SYSTEM_INCREASE_AUTOMATA_RATIO, 18, 3, increaseWorldAutomataRatio)
+    ui:addButton(SYSTEM_DECREASE_AUTOMATA_RATIO, 18, 4, decreaseWorldAutomataRatio)
 end
 
 function love.update(dt)
@@ -281,6 +338,8 @@ function love.update(dt)
         -- Update camera position
         camera:update(dt, playerView.x, playerView.y, playerView.width, playerView.height, WINDOW_WIDTH, WINDOW_HEIGHT)
     end
+
+    if #Fruits <= 0 then nextLevel() end
 end
 
 function love.draw(dt)
@@ -355,6 +414,10 @@ function love.draw(dt)
     -- draw ui last
     ui:draw()
 
+    -- display world update limit
+    love.graphics.print("passes: " .. worldUpdateLimit, WINDOW_WIDTH - 100, 5)
+    love.graphics.print("ratio: " .. worldAutomataRatio, WINDOW_WIDTH - 100, 20)
+
     if inputActive then
         love.graphics.setColor(0, 0, 0, 0.5)
         love.graphics.rectangle("fill", 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT)
@@ -365,7 +428,7 @@ end
 
 function love.keypressed(key)
     if inputActive then
-        if key == "return" then
+        if key == "return" or key == "kpenter" then
             inputActive = false
             startGameWithNewSeed(inputText)
         elseif key == "backspace" then

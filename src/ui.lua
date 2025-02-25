@@ -1,4 +1,3 @@
-
 local UI = {}
 UI.__index = UI
 
@@ -11,6 +10,8 @@ local reloadButtonImage = love.graphics.newImage("assets/images/UI/reload_button
 local changeSeedButtonImage = love.graphics.newImage("assets/images/UI/seed_button.png")
 local increaseUpdatesButtonImage = love.graphics.newImage("assets/images/UI/increase_world_updates_btn.png")
 local decreaseUpdatesButtonImage = love.graphics.newImage("assets/images/UI/decrease_world_updates_btn.png")
+local increaseAutomataRatioButtonImage = love.graphics.newImage("assets/images/UI/increase_automata_ratio_btn.png")
+local decreaseAutomataRatioButtonImage = love.graphics.newImage("assets/images/UI/decrease_automata_ratio_btn.png")
 
 love.mouse.setVisible(false)
 
@@ -80,6 +81,12 @@ function UI:doButtonClick(clickedButton)
         if clickedButton.label == SYSTEM_DECREASE_UPDATES then
             clickedButton.actionClosure()
         end
+        if clickedButton.label == SYSTEM_INCREASE_AUTOMATA_RATIO then
+            clickedButton.actionClosure()
+        end
+        if clickedButton.label == SYSTEM_DECREASE_AUTOMATA_RATIO then
+            clickedButton.actionClosure()
+        end
     end
     return clickedButton.label
 end
@@ -95,7 +102,9 @@ local function getTypeFromLabel(label)
         label == SYSTEM_RELOAD or
         label == SYSTEM_INCREASE_UPDATES or
         label == SYSTEM_DECREASE_UPDATES or
-        label == SYSTEM_CHANGE_SEED then
+        label == SYSTEM_CHANGE_SEED or
+        label == SYSTEM_INCREASE_AUTOMATA_RATIO or
+        label == SYSTEM_DECREASE_AUTOMATA_RATIO then
         return BUTTON_TYPE_SYSTEM
     end
     return nil
@@ -122,6 +131,12 @@ local function getImageFromLabel(label)
     end
     if label == SYSTEM_DECREASE_UPDATES then
         return decreaseUpdatesButtonImage
+    end
+    if label == SYSTEM_INCREASE_AUTOMATA_RATIO then
+        return increaseAutomataRatioButtonImage
+    end
+    if label == SYSTEM_DECREASE_AUTOMATA_RATIO then
+        return decreaseAutomataRatioButtonImage
     end
     return nil
 end
