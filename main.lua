@@ -236,6 +236,7 @@ function love.load(arg)
     love.window.setMode(WINDOW_WIDTH, WINDOW_HEIGHT)
     loadFruitImages()
     startGame()
+    ui:addButton(ABILITY_SELECT, 2, 15)
     ui:addButton(ABILITY_DIG, 4, 15)
     ui:addButton(SYSTEM_EXIT, 15, 0)
 end
@@ -311,10 +312,10 @@ function love.draw(dt)
     -- highlight the hovered tile or button
     local x, y = love.mouse.getPosition()
     local hoveredTile = ui:getHoveredTile(x, y)
-    local highlightColor = abilities.selectedAbility and { 1, 0, 0 } or { 1, 1, 1 }
-    love.graphics.setColor(unpack(highlightColor))
+    local highlightColor = abilities:getHighlightColor() or { 1, 1, 1, .5 }
+    love.graphics.setColor(highlightColor)
     if hoveredTile then
-        love.graphics.rectangle("line", (hoveredTile.x - 1) * TILE_SIZE, (hoveredTile.y - 1) * TILE_SIZE, TILE_SIZE,
+        love.graphics.rectangle("fill", (hoveredTile.x - 1) * TILE_SIZE, (hoveredTile.y - 1) * TILE_SIZE, TILE_SIZE,
             TILE_SIZE)
     end
     camera:reset()

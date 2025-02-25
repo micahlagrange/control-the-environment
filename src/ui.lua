@@ -3,6 +3,7 @@ UI.__index = UI
 
 local plainCursor = love.graphics.newImage("assets/images/UI/cursor_plain.png")
 local digCursor = love.graphics.newImage("assets/images/UI/dig_icon.png")
+local exitButtonImage = love.graphics.newImage("assets/images/UI/exit_button.png")
 
 function UI:new(abilities, camera)
     love.mouse.setVisible(false)
@@ -17,6 +18,8 @@ function UI:new(abilities, camera)
     self.gridHeight = self.height / 16
     self.buttons = {}
     self.cursorImage = plainCursor
+
+    love.graphics.setFont(love.graphics.newFont('assets/fonts/commodore64.ttf', 18))
     return self
 end
 
@@ -61,11 +64,24 @@ function UI:doButtonClick(clickedButton)
 end
 
 local function getTypeFromLabel(label)
-    if label == ABILITY_DIG or label == ABILITY_EXPLODE or label == ABILITY_LINE or label == ABILITY_DRAG then
+    if label == ABILITY_DIG or label == ABILITY_EXPLODE or label == ABILITY_LINE or label == ABILITY_DRAG or ABILITY_SELECT then
         return BUTTON_TYPE_ABILITY
     end
     if label == SYSTEM_EXIT then
         return BUTTON_TYPE_SYSTEM
+    end
+    return nil
+end
+
+local function getImageFromLabel(label)
+    if label == ABILITY_SELECT then
+        return plainCursor
+    end
+    if label == ABILITY_DIG then
+        return digCursor
+    end
+    if label == SYSTEM_EXIT then
+        return exitButtonImage
     end
     return nil
 end
@@ -78,7 +94,8 @@ function UI:addButton(label, x, y)
         label = label,
         x = x,
         y = y,
-        buttonType = getTypeFromLabel(label)
+        buttonType = getTypeFromLabel(label),
+        image = getImageFromLabel(label),
     }
     table.insert(self.buttons, button)
     return button
@@ -89,26 +106,31 @@ function UI:draw()
     local buttonHeight = self.height / 16
 
     for i, button in ipairs(self.buttons) do
-        love.graphics.setColor(1, 0, 0)
-        love.graphics.rectangle("line", button.x * buttonWidth, button.y * buttonHeight, buttonWidth, buttonHeight)
         love.graphics.setColor(1, 1, 1)
-        local textWidth = love.graphics.getFont():getWidth(button.label)
-        local textHeight = love.graphics.getFont():getHeight(button.label)
-        love.graphics.draw(digCursor, button.x * buttonWidth, button.y * buttonHeight)
-        love.graphics.print(button.label, button.x * buttonWidth + (buttonWidth - textWidth) / 2,
-            button.y * buttonHeight + (buttonHeight - textHeight) / 2)
+
+        love.graphics.draw(
+            button.image, button.x * buttonWidth, button.y * buttonHeight, 0,
+            buttonWidth / button.image:getWidth(), buttonHeight / button.image:getHeight())
     end
 
     -- highlight button hovered on
     local x, y = love.mouse.getPosition()
     love.graphics.setColor(1, 1, 1)
-    local hoveredButton = self:getHoveredButton(x, y)
-    if hoveredButton then
-        love.graphics.rectangle("line", hoveredButton.x * buttonWidth, hoveredButton.y * buttonHeight, buttonWidth,
+    local btn = self:getHoveredButton(x, y)
+    if btn then
+        love.graphics.rectangle("line", btn.x * buttonWidth, btn.y * buttonHeight, buttonWidth,
             buttonHeight)
+        -- show the label of the hovered button
+        local textWidth = love.graphics.getFont():getWidth(btn.label)
+        local textHeight = love.graphics.getFont():getHeight(btn.label)
+        love.graphics.setColor(.5, .8, .6)
+        love.graphics.print(
+            btn.label, btn.x * buttonWidth + (buttonWidth - textWidth) / 2,
+            btn.y * buttonHeight + (buttonHeight - textHeight) / 2)
     end
 
     -- draw cursor last!
+    love.graphics.setColor(1, 1, 1)
     love.graphics.draw(self.cursorImage, love.mouse.getX(), love.mouse.getY())
 end
 
@@ -130,6 +152,8 @@ function UI:setCursorImage(ability)
     local image
     if ability == ABILITY_DIG then
         image = digCursor
+    elseif ability == ABILITY_SELECT then
+        image = plainCursor
     else
         image = plainCursor
     end

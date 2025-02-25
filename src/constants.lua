@@ -1,5 +1,6 @@
 -- Models
 -- Ability button labels
+ABILITY_SELECT      = "select"   -- regular cursor
 ABILITY_DIG         = "dig"
 ABILITY_EXPLODE     = "explode"
 ABILITY_LINE        = "line"

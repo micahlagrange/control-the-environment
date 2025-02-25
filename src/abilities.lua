@@ -34,7 +34,10 @@ function Abilities:selectAbility(ability)
         if self.drag > 0 then
             self:readyAbility(ABILITY_DRAG)
         end
+    elseif ability == ABILITY_SELECT then
+        self:readyAbility(ABILITY_SELECT)
     else
+        self.selectedAbility = nil
         if UI_DEBUG then
             print("Invalid ability selected")
         end
@@ -43,6 +46,22 @@ end
 
 function Abilities:readyAbility(ability)
     self.selectedAbility = ability
+end
+
+function Abilities:getHighlightColor()
+    if self.selectedAbility == ABILITY_DIG then
+        return {1, 0, 0, .3}
+    elseif self.selectedAbility == ABILITY_EXPLODE then
+        return {1, 0, 0, .3}
+    elseif self.selectedAbility == ABILITY_LINE then
+        return {1, 0, 0, .3}
+    elseif self.selectedAbility == ABILITY_DRAG then
+        return {1, 0, 0, .3}
+    elseif self.selectedAbility == ABILITY_SELECT then
+        return {1, 1, 1, .3}
+    else
+        return {1, 1, 1, .3}
+    end
 end
 
 function Abilities:useAbility()
