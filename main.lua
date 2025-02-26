@@ -311,16 +311,7 @@ local function decreaseWorldUpdateLimit()
 end
 
 -- LOVE FUNCTIONS
-
-function love.load(arg)
-    love.window.setMode(WINDOW_WIDTH, WINDOW_HEIGHT)
-    loadFruitImages()
-    startGame()
-    ui:addButton(ABILITY_SELECT, 1, 1)
-    ui:addButton(ABILITY_DIG, 1, 3)
-    ui:addButton(ABILITY_EXPLODE, 1, 5)
-    --
-    ui:addButton(SYSTEM_EXIT, 19, 15)
+local function addSystemButtons()
     ui:addButton(SYSTEM_RELOAD, 19, 1, function() startGame() end)
     ui:addButton(SYSTEM_CHANGE_SEED, 19, 3, function()
         inputActive = true
@@ -330,6 +321,16 @@ function love.load(arg)
     ui:addButton(SYSTEM_DECREASE_UPDATES, 18, 2, decreaseWorldUpdateLimit)
     ui:addButton(SYSTEM_INCREASE_AUTOMATA_RATIO, 18, 3, increaseWorldAutomataRatio)
     ui:addButton(SYSTEM_DECREASE_AUTOMATA_RATIO, 18, 4, decreaseWorldAutomataRatio)
+end
+
+function love.load(arg)
+    love.window.setMode(WINDOW_WIDTH, WINDOW_HEIGHT)
+    loadFruitImages()
+    startGame()
+    ui:addButton(ABILITY_SELECT, 1, 1)
+    ui:addButton(ABILITY_DIG, 1, 3)
+    ui:addButton(ABILITY_EXPLODE, 1, 5)
+    ui:addButton(SYSTEM_EXIT, 19, 15)
 end
 
 function love.update(dt)
@@ -424,7 +425,8 @@ function love.draw(dt)
         love.graphics.setColor(0, 0, 0, 0.5)
         love.graphics.rectangle("fill", 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT)
         love.graphics.setColor(1, 1, 1)
-        love.graphics.printf("Enter new seed: " .. inputText, 0, WINDOW_HEIGHT / 2, WINDOW_WIDTH, "center")
+        love.graphics.printf("Enter new seed (esc or click to cancel): " .. inputText, 0, WINDOW_HEIGHT / 2, WINDOW_WIDTH,
+            "center")
     end
 end
 
@@ -446,10 +448,15 @@ function love.textinput(t)
 end
 
 function love.keyreleased(key)
+    if key == "f2" then
+        addSystemButtons()
+    end
+    if key == "escape" then
+        if inputActive then inputActive = false end
+    end
+
     if not inputActive then
-        if key == "escape" then
-            love.event.quit()
-        elseif key == "=" or key == "+" then
+        if key == "=" or key == "+" then
             camera:zoom(1.1)
         elseif key == "-" then
             camera:zoom(0.9)
@@ -465,7 +472,11 @@ function love.wheelmoved(x, y)
     end
 end
 
-function love.mousereleased(x, y, button)
+function love.mousepressed(x, y, button)
+    if inputActive then
+        inputActive = false
+        return
+    end
     if button == 1 then
         local clickedButton = ui:clickedButton(x, y)
         if clickedButton then
@@ -474,15 +485,14 @@ function love.mousereleased(x, y, button)
             abilities:useAbility(x, y)
         end
         world:debugClick(x, y)
-    end
-    if button == 2 and dragging then
-        dragging = false
+    elseif button == 2 then
+        dragging = true
     end
 end
 
-function love.mousepressed(x, y, button)
-    if button == 2 then
-        dragging = true
+function love.mousereleased(x, y, button)
+    if button == 2 and dragging then
+        dragging = false
     end
 end
 
