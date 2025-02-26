@@ -1,19 +1,13 @@
 local UI = {}
 UI.__index = UI
 
+local Buttons = require("src.buttons")
+
 local gridHSize = 20
 local gridVSize = 16
-local plainCursor = love.graphics.newImage("assets/images/UI/cursor_plain.png")
-local digCursor = love.graphics.newImage("assets/images/UI/dig_icon.png")
-local exitButtonImage = love.graphics.newImage("assets/images/UI/exit_button.png")
-local reloadButtonImage = love.graphics.newImage("assets/images/UI/reload_button.png")
-local changeSeedButtonImage = love.graphics.newImage("assets/images/UI/seed_button.png")
-local increaseUpdatesButtonImage = love.graphics.newImage("assets/images/UI/increase_world_updates_btn.png")
-local decreaseUpdatesButtonImage = love.graphics.newImage("assets/images/UI/decrease_world_updates_btn.png")
-local increaseAutomataRatioButtonImage = love.graphics.newImage("assets/images/UI/increase_automata_ratio_btn.png")
-local decreaseAutomataRatioButtonImage = love.graphics.newImage("assets/images/UI/decrease_automata_ratio_btn.png")
-
 love.mouse.setVisible(false)
+
+local plainCursor = Buttons:buttonFromLabel(ABILITY_SELECT).cursor
 
 function UI:new(abilities, camera, scoring)
     self.abilities = abilities
@@ -27,7 +21,6 @@ function UI:new(abilities, camera, scoring)
     self.gridHeight = self.height / gridVSize
     self.buttons = {}
     self.cursorImage = plainCursor
-
     self.isWaitingForInput = false
 
     love.graphics.setFont(love.graphics.newFont('assets/fonts/commodore64.ttf', 12))
@@ -64,7 +57,7 @@ function UI:doButtonClick(clickedButton)
     end
     if clickedButton.buttonType == BUTTON_TYPE_ABILITY then
         self.abilities:selectAbility(clickedButton.label)
-        self:setCursorImage(clickedButton.label)
+        self.cursorImage = clickedButton.cursor
     elseif clickedButton.buttonType == BUTTON_TYPE_SYSTEM then
         if clickedButton.label == SYSTEM_EXIT then
             love.event.quit()
@@ -91,69 +84,12 @@ function UI:doButtonClick(clickedButton)
     return clickedButton.label
 end
 
-local function getTypeFromLabel(label)
-    if label == ABILITY_DIG or
-        label == ABILITY_EXPLODE or
-        label == ABILITY_LINE or
-        label == ABILITY_DRAG or
-        label == ABILITY_SELECT then
-        return BUTTON_TYPE_ABILITY
-    elseif label == SYSTEM_EXIT or
-        label == SYSTEM_RELOAD or
-        label == SYSTEM_INCREASE_UPDATES or
-        label == SYSTEM_DECREASE_UPDATES or
-        label == SYSTEM_CHANGE_SEED or
-        label == SYSTEM_INCREASE_AUTOMATA_RATIO or
-        label == SYSTEM_DECREASE_AUTOMATA_RATIO then
-        return BUTTON_TYPE_SYSTEM
-    end
-    return nil
-end
-
-local function getImageFromLabel(label)
-    if label == ABILITY_SELECT then
-        return plainCursor
-    end
-    if label == ABILITY_DIG then
-        return digCursor
-    end
-    if label == SYSTEM_EXIT then
-        return exitButtonImage
-    end
-    if label == SYSTEM_RELOAD then
-        return reloadButtonImage
-    end
-    if label == SYSTEM_CHANGE_SEED then
-        return changeSeedButtonImage
-    end
-    if label == SYSTEM_INCREASE_UPDATES then
-        return increaseUpdatesButtonImage
-    end
-    if label == SYSTEM_DECREASE_UPDATES then
-        return decreaseUpdatesButtonImage
-    end
-    if label == SYSTEM_INCREASE_AUTOMATA_RATIO then
-        return increaseAutomataRatioButtonImage
-    end
-    if label == SYSTEM_DECREASE_AUTOMATA_RATIO then
-        return decreaseAutomataRatioButtonImage
-    end
-    return nil
-end
-
 -- The x and y of the button determine it's placement on screen
 -- From UI space X axis - 1 to 16 being the top row, and the Y axis 1 to 20 being the left column
 -- The label is the text that will be displayed on the button
 -- Pass a closure to run it on click
 function UI:addButton(label, x, y, actionClosure)
-    local button = {
-        label = label,
-        x = x,
-        y = y,
-        buttonType = getTypeFromLabel(label),
-        image = getImageFromLabel(label),
-        actionClosure = actionClosure,
-    }
+    local button = Buttons:buttonFromLabel(label, x, y, actionClosure)
     table.insert(self.buttons, button)
     return button
 end
@@ -163,11 +99,12 @@ function UI:draw()
     local buttonHeight = self.height / gridVSize
 
     for i, button in ipairs(self.buttons) do
-        love.graphics.setColor(1, 1, 1)
-
-        love.graphics.draw(
-            button.image, button.x * buttonWidth, button.y * buttonHeight, 0,
-            buttonWidth / button.image:getWidth(), buttonHeight / button.image:getHeight())
+        if self.scoring:upgradeAvailable(button.label) or button.buttonType ~= BUTTON_TYPE_ABILITY or button.label == ABILITY_SELECT then
+            love.graphics.setColor(1, 1, 1)
+            love.graphics.draw(
+                button.icon, button.x * buttonWidth, button.y * buttonHeight, 0,
+                buttonWidth / button.icon:getWidth(), buttonHeight / button.icon:getHeight())
+        end
     end
 
     -- highlight button hovered on
@@ -189,10 +126,17 @@ function UI:draw()
     -- draw score
     love.graphics.setColor(1, 1, 1)
     love.graphics.print("Score: " .. self.scoring:getFinalScore(), 10, 10)
+    -- ability points
+    love.graphics.setColor(1, 1, 1)
+    love.graphics.print("Upgrades: " .. self.scoring.ability_score, 200, 10)
 
     -- draw cursor last!
+    if self.abilities.selectedAbility == ABILITY_SELECT then
+        -- additional check if ability expired and we need to go back to selector
+        self.cursorImage = plainCursor
+    end
     love.graphics.setColor(1, 1, 1)
-    love.graphics.draw(self.cursorImage, love.mouse.getX(), love.mouse.getY())
+    love.graphics.draw(self.cursorImage, love.mouse.getX(), love.mouse.getY(), 0, 2, 2)
 end
 
 function UI:getHoveredButton(x, y)
@@ -207,18 +151,6 @@ end
 
 function UI:getHoveredTile(x, y)
     return self.camera:toTileSpace(x, y)
-end
-
-function UI:setCursorImage(ability)
-    local image
-    if ability == ABILITY_DIG then
-        image = digCursor
-    elseif ability == ABILITY_SELECT then
-        image = plainCursor
-    else
-        image = plainCursor
-    end
-    self.cursorImage = image
 end
 
 return UI

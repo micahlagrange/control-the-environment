@@ -318,6 +318,8 @@ function love.load(arg)
     startGame()
     ui:addButton(ABILITY_SELECT, 1, 1)
     ui:addButton(ABILITY_DIG, 1, 3)
+    ui:addButton(ABILITY_EXPLODE, 1, 5)
+    --
     ui:addButton(SYSTEM_EXIT, 19, 15)
     ui:addButton(SYSTEM_RELOAD, 19, 1, function() startGame() end)
     ui:addButton(SYSTEM_CHANGE_SEED, 19, 3, function()

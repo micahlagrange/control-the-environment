@@ -8,6 +8,8 @@ function Scoring:new()
     self.actions = 0
     self.fruits = 0
     self.score = 0
+
+    self.ability_score = 0
     return self
 end
 
@@ -24,6 +26,7 @@ function Scoring:incrementActions()
 end
 
 function Scoring:incrementFruits()
+    self.ability_score = self.ability_score + 1
     self.fruits = self.fruits + 50
 end
 
@@ -38,5 +41,17 @@ function Scoring:reset()
     self.fruits = 0
     self.score = 0
 end
+
+function Scoring:upgradeAvailable(label)
+    if label == ABILITY_DIG then return true end
+    if label == ABILITY_EXPLODE then
+        return self.ability_score > 5 or UI_DEBUG
+    end
+end
+
+function Scoring:useUpgrade()
+    self.ability_score = self.ability_score - 1
+end
+
 
 return Scoring

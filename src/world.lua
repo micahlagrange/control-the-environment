@@ -30,10 +30,34 @@ function World:breakWallTileAtMouse()
     local tilePos = self:getTileCoordinatesFromScreen(uix, uiy)
     if self.tiles[tilePos.x] and self.tiles[tilePos.y] then
         local tile = self.tiles[tilePos.x][tilePos.y]
-        if DEBUG then print("setting (alive? " ..
-            tostring(tile.Alive) .. ") tile " .. tilePos.x .. ", " .. tilePos.y .. " to alive") end
+        if DEBUG then
+            print("setting (alive? " ..
+                tostring(tile.Alive) .. ") tile " .. tilePos.x .. ", " .. tilePos.y .. " to alive")
+        end
         if not tile.Alive then
             tile.Alive = true
+        end
+    end
+end
+
+function World:breakWallTileAndSurroundingAtMouse()
+    local uix, uiy = love.mouse.getPosition()
+    local tilePos = self:getTileCoordinatesFromScreen(uix, uiy)
+    local offsets = {
+        { 0, 0 }, { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 }, { 1, 1 }, { -1, -1 }, { 1, -1 }, { -1, 1 }
+    }
+    if UI_DEBUG then print("explod") end
+    for _, offset in ipairs(offsets) do
+        local x, y = tilePos.x + offset[1], tilePos.y + offset[2]
+        if self.tiles[x] and self.tiles[x][y] then
+            local tile = self.tiles[x][y]
+            if UI_DEBUG then
+                print("explode (alive? " ..
+                    tostring(tile.Alive) .. ") tile " .. x .. ", " .. y .. " to alive")
+            end
+            if not tile.Alive then
+                tile.Alive = true
+            end
         end
     end
 end
