@@ -40,11 +40,22 @@ local groundAutomataRatio = GROUND_AUTOMATA_RATIO
 local levelsPassed        = 0
 
 local function getMaxCapitalists()
-    return math.floor(worldWidth * worldHeight / 200000)
+    local max = math.floor(worldWidth * worldHeight / 200000)
+    if max < 1 then
+        return 1
+    else
+        return max
+    end
 end
 
 local function getMaxFruit()
-    return getMaxCapitalists() * 2
+    if levelsPassed == 0 then return 1 end
+    local max = getMaxCapitalists() * 2
+    if max < 1 then
+        return 1
+    else
+        return max
+    end
 end
 
 local function seedStringToInt(seed)
@@ -142,10 +153,6 @@ local function GenerateWorld()
 
     applyCellularAutomata(tiles, width, height, worldUpdateLimit, 3, 3)
 
-    -- Add AI characters
-    if DEBUG then
-        print("Adding " .. getMaxCapitalists() .. " AI characters")
-    end
     -- Empty out aiCharacters without reassigning the table
     for i = #aiCharacters, 1, -1 do
         aiCharacters[i] = nil
@@ -188,18 +195,19 @@ local function GenerateGroundColors()
     GroundColors = {}
     local width = worldHeight / TILE_SIZE
     local height = worldHeight / TILE_SIZE
-
-    for x = 1, width do
+    for x = 1, #tiles do
         GroundColors[x] = {}
-        for y = 1, height do
+        for y = 1, #tiles[x] do
             GroundColors[x][y] = { Alive = randomInt(0, 100) < groundAutomataRatio }
         end
     end
 
-    GroundColors = applyCellularAutomata(GroundColors, width, height, groundUpdateLimit, 3, 3)
+    applyCellularAutomata(GroundColors, width, height, groundUpdateLimit, 3, 3)
 end
 
 local function startGame()
+    ui:alert("Help the dudes get the foods!")
+    abilities:readyAbility(ABILITY_DIG)
     print("Starting game with seed: " .. seed)
     love.math.setRandomSeed(seedStringToInt(seed)) -- set the seed for reproducibility, always coerce it to a number
 
@@ -210,7 +218,12 @@ end
 
 local function nextLevel()
     levelsPassed = levelsPassed + 1
-    love.math.setRandomSeed(seedStringToInt(seed) + levelsPassed)
+    if levelsPassed == 3 then
+        ui:alert("You can zoom in and out with scrollwheel, or +/-")
+    end
+    local newSeed = seedStringToInt(seed) + levelsPassed
+    print("new seed: " .. newSeed)
+    love.math.setRandomSeed(newSeed)
 
     if worldAutomataRatio > 1 then
         worldAutomataRatio = worldAutomataRatio - 1
@@ -321,13 +334,14 @@ local function addSystemButtons()
     ui:addButton(SYSTEM_DECREASE_UPDATES, 18, 2, decreaseWorldUpdateLimit)
     ui:addButton(SYSTEM_INCREASE_AUTOMATA_RATIO, 18, 3, increaseWorldAutomataRatio)
     ui:addButton(SYSTEM_DECREASE_AUTOMATA_RATIO, 18, 4, decreaseWorldAutomataRatio)
+    SystemUI = true
 end
 
 function love.load(arg)
     love.window.setMode(WINDOW_WIDTH, WINDOW_HEIGHT)
     loadFruitImages()
     startGame()
-    ui:addButton(ABILITY_SELECT, 1, 1)
+    -- ui:addButton(ABILITY_SELECT, 1, 1)
     ui:addButton(ABILITY_DIG, 1, 3)
     ui:addButton(ABILITY_EXPLODE, 1, 5)
     ui:addButton(SYSTEM_EXIT, 19, 15)
@@ -340,6 +354,7 @@ function love.update(dt)
 
         -- Update camera position
         camera:update(dt, playerView.x, playerView.y, playerView.width, playerView.height, WINDOW_WIDTH, WINDOW_HEIGHT)
+        ui:update(dt)
     end
 
     if #Fruits <= 0 then nextLevel() end
@@ -352,6 +367,10 @@ function love.draw(dt)
         for y = 1, #tiles[x] do
             local tile = tiles[x][y]
             if tile.Alive then
+                if GroundColors[x] == nil or GroundColors[x][y] == nil then
+                    GroundColors[x] = {}
+                    GroundColors[x][y] = { Alive = true }
+                end
                 local groundCell = GroundColors[x][y]
                 if groundCell.Alive then
                     love.graphics.setColor(getTileColor(GRASS_COLORS, x, y))
@@ -418,8 +437,10 @@ function love.draw(dt)
     ui:draw()
 
     -- display world update limit
-    love.graphics.print("passes: " .. worldUpdateLimit, WINDOW_WIDTH - 100, 5)
-    love.graphics.print("ratio: " .. worldAutomataRatio, WINDOW_WIDTH - 100, 20)
+    if SystemUI then
+        love.graphics.print("passes: " .. worldUpdateLimit, WINDOW_WIDTH - 100, 5)
+        love.graphics.print("ratio: " .. worldAutomataRatio, WINDOW_WIDTH - 100, 20)
+    end
 
     if inputActive then
         love.graphics.setColor(0, 0, 0, 0.5)

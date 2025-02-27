@@ -7,7 +7,7 @@ local gridHSize = 20
 local gridVSize = 16
 love.mouse.setVisible(false)
 
-local plainCursor = Buttons:buttonFromLabel(ABILITY_SELECT).cursor
+local plainCursor = Buttons:buttonFromLabel(ABILITY_DIG).cursor
 
 function UI:new(abilities, camera, scoring)
     self.abilities = abilities
@@ -128,7 +128,7 @@ function UI:draw()
     love.graphics.print("Score: " .. self.scoring:getFinalScore(), 10, 10)
     -- ability points
     love.graphics.setColor(1, 1, 1)
-    love.graphics.print("Upgrades: " .. self.scoring.ability_score, 200, 10)
+    love.graphics.print("Tool level: " .. self.scoring.ability_score, 200, 10)
 
     -- draw cursor last!
     if self.abilities.selectedAbility == ABILITY_SELECT then
@@ -137,6 +137,14 @@ function UI:draw()
     end
     love.graphics.setColor(1, 1, 1)
     love.graphics.draw(self.cursorImage, love.mouse.getX(), love.mouse.getY(), 0, 2, 2)
+
+    -- alert
+    if self.alertShown then
+        local alertPosition = { x = 60, y = 40 }
+        local alertColor = { .9, .3, .3 }
+        love.graphics.setColor(alertColor)
+        love.graphics.print(self.alertText, alertPosition.x, alertPosition.y)
+    end
 end
 
 function UI:getHoveredButton(x, y)
@@ -151,6 +159,19 @@ end
 
 function UI:getHoveredTile(x, y)
     return self.camera:toTileSpace(x, y)
+end
+
+function UI:alert(text)
+    self.alertTimer = 10
+    self.alertShown = true
+    self.alertText = text
+end
+
+function UI:update(dt)
+    self.alertTimer = self.alertTimer - dt
+    if self.alertTimer <= 0 then
+        self.alertShown = false
+    end
 end
 
 return UI

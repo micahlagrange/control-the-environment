@@ -19,7 +19,7 @@ SYSTEM_DECREASE_UPDATES = "decreaseupdates"
 SYSTEM_INCREASE_AUTOMATA_RATIO = "increaseautomataratio"
 SYSTEM_DECREASE_AUTOMATA_RATIO = "decreaseautomataratio"
 
-DEFAULT_SEED            = "i"  -- if the player does not set a seed, use this
+DEFAULT_SEED            = "987"  -- if the player does not set a seed, use this
 FRUIT_PERCENTAGE        = 0.004 -- How often do fruit spawn
 MAX_FRUIT               = 10   -- Max number of fruits to spawn
 
