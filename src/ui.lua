@@ -1,3 +1,6 @@
+local spritesheet = require("src.spritesheet")
+local anim8 = require("libs.anim8")
+
 local UI = {}
 UI.__index = UI
 
@@ -8,6 +11,13 @@ local gridVSize = 16
 love.mouse.setVisible(false)
 
 local plainCursor = Buttons:buttonFromLabel(ABILITY_DIG).cursor
+
+local zoomIconImage = love.graphics.newImage("assets/images/UI/scroll_zoom_icon.png")
+local zoomIconGrid = spritesheet.NewAnim8Grid(zoomIconImage, 16, 16)
+local zoomIconAnim = anim8.newAnimation(zoomIconGrid('1-3', 1), 0.3)
+local panIconImage = love.graphics.newImage("assets/images/UI/map_move_icon.png")
+local panIconGrid = spritesheet.NewAnim8Grid(panIconImage, 16, 16)
+local panIconAnim = anim8.newAnimation(panIconGrid('1-3', 1), 0.3)
 
 function UI:new(abilities, camera, scoring)
     self.abilities = abilities
@@ -25,6 +35,13 @@ function UI:new(abilities, camera, scoring)
 
     love.graphics.setFont(love.graphics.newFont('assets/fonts/commodore64.ttf', 12))
     return self
+end
+
+function UI:UIGridToScreenSpace(x, y)
+    return {
+        x = x * self.gridWidth,
+        y = y * self.gridHeight,
+    }
 end
 
 function UI:screenToUIGridSpace(x, y)
@@ -55,7 +72,7 @@ function UI:doButtonClick(clickedButton)
     if UI_DEBUG then
         print(clickedButton.buttonType .. " button clicked: " .. clickedButton.label)
     end
-    if clickedButton.buttonType == BUTTON_TYPE_ABILITY then
+    if clickedButton.buttonType == BUTTON_TYPE_ABILITY and self.scoring:upgradeAvailable(clickedButton.label) then
         self.abilities:selectAbility(clickedButton.label)
         self.cursorImage = clickedButton.cursor
     elseif clickedButton.buttonType == BUTTON_TYPE_SYSTEM then
@@ -111,7 +128,7 @@ function UI:draw()
     local x, y = love.mouse.getPosition()
     love.graphics.setColor(1, 1, 1)
     local btn = self:getHoveredButton(x, y)
-    if btn then
+    if btn and self.scoring:upgradeAvailable(btn.label) then
         love.graphics.rectangle("line", btn.x * buttonWidth, btn.y * buttonHeight, buttonWidth,
             buttonHeight)
         -- show the label of the hovered button
@@ -123,12 +140,12 @@ function UI:draw()
             btn.y * buttonHeight + (buttonHeight - textHeight) / 2)
     end
 
+    love.graphics.setColor(1, 1, 1)
     -- draw score
-    love.graphics.setColor(1, 1, 1)
-    love.graphics.print("Score: " .. self.scoring:getFinalScore(), 10, 10)
-    -- ability points
-    love.graphics.setColor(1, 1, 1)
-    love.graphics.print("Tool level: " .. self.scoring.ability_score, 200, 10)
+    love.graphics.print(
+    "Score: " ..
+    self.scoring:getFinalScore() ..
+    "     Tool level: " .. self.scoring:toolLevel() + 1 .. "      Wins: " .. self.scoring.levelsWon, 10, 10)
 
     -- draw cursor last!
     if self.abilities.selectedAbility == ABILITY_SELECT then
@@ -144,6 +161,12 @@ function UI:draw()
         local alertColor = { .9, .3, .3 }
         love.graphics.setColor(alertColor)
         love.graphics.print(self.alertText, alertPosition.x, alertPosition.y)
+    end
+
+    if self.iconAnimation and self.animIconImage then
+        local corner = self:UIGridToScreenSpace(19, 2)
+        love.graphics.setColor(1, 1, 1)
+        self.iconAnimation:draw(self.animIconImage, corner.x, corner.y, 0, 2, 2)
     end
 end
 
@@ -161,16 +184,28 @@ function UI:getHoveredTile(x, y)
     return self.camera:toTileSpace(x, y)
 end
 
-function UI:alert(text)
+function UI:alert(text, iconActionName)
     self.alertTimer = 10
     self.alertShown = true
     self.alertText = text
+    if iconActionName == "zoom" then
+        self.iconAnimation = zoomIconAnim
+        self.animIconImage = zoomIconImage
+    end
+    if iconActionName == "pan" then
+        self.iconAnimation = panIconAnim
+        self.animIconImage = panIconImage
+    end
 end
 
 function UI:update(dt)
     self.alertTimer = self.alertTimer - dt
     if self.alertTimer <= 0 then
         self.alertShown = false
+        self.iconAnimation = nil
+    end
+    if self.iconAnimation then
+        self.iconAnimation:update(dt)
     end
 end
 

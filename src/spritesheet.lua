@@ -1,3 +1,5 @@
+local Anim8 = require("libs.anim8")
+
 local spritesheet = {}
 
 -- Takes a love.graphics.newImage('somepath') and returns a table of quads

@@ -218,8 +218,12 @@ end
 
 local function nextLevel()
     levelsPassed = levelsPassed + 1
-    if levelsPassed == 3 then
-        ui:alert("You can zoom in and out with scrollwheel, or +/-")
+    scoring.levelsWon = scoring.levelsWon + 1
+    if levelsPassed == 1 then
+        ui:alert("You can zoom in and out with scrollwheel, or +/-", "zoom")
+    end
+    if levelsPassed == 2 then
+        ui:alert("You can move the map around with rightclick, or WASD", "pan")
     end
     local newSeed = seedStringToInt(seed) + levelsPassed
     print("new seed: " .. newSeed)
@@ -271,18 +275,12 @@ local function updatePlayerView(dt)
     playerView.y = newY
 end
 
-local fruitUpdateTimer = 0
-local fruitUpdateInterval = 1 -- seconds
 local giveUpTimer = 0
 
 local function updateAICharacters(dt)
-    fruitUpdateTimer = fruitUpdateTimer + dt
     giveUpTimer = giveUpTimer + dt
-    if fruitUpdateTimer >= fruitUpdateInterval then
-        for _, aiCharacter in ipairs(aiCharacters) do
-            aiCharacter:chooseNearestFruit()
-        end
-        fruitUpdateTimer = 0
+    for _, aiCharacter in ipairs(aiCharacters) do
+        aiCharacter:chooseNearestFruit()
     end
 
     for _, aiCharacter in ipairs(aiCharacters) do
