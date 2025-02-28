@@ -1,6 +1,6 @@
 love.graphics.setDefaultFilter("nearest", "nearest")
 
-local Audio     = require('src.audio')
+Audio           = require('src.audio')
 local tiles     = {}
 
 -- libs
@@ -66,7 +66,7 @@ end
 local function getMaxFruit()
     if DEBUG then print("levels won: " .. scoring.levelsWon) end
     if scoring.levelsWon == 0 then return 1 end
-    local max = getMaxCapitalists() * 2
+    local max = #capitalists * 2
     if max < 1 then
         return 1
     else
@@ -174,8 +174,11 @@ local function GenerateWorld()
         capitalists[i] = nil
     end
 
-    if DEBUG then print("min capitalists: " ..
-    getMinCapitalists() .. ", max capitalists: " .. getMaxCapitalists() .. ", max foods: " .. getMaxFruit()) end
+    -- let random decide
+    if DEBUG then
+        print("min capitalists: " ..
+            getMinCapitalists() .. ", max capitalists: " .. getMaxCapitalists() .. ", max foods: " .. getMaxFruit())
+    end
     for i = 1, getMaxCapitalists() do
         local capitalist
         repeat
@@ -188,7 +191,7 @@ local function GenerateWorld()
                 scoring
             )
         until isCharacterPositionValid(capitalist.x, capitalist.y)
-        capitalist.id = #capitalist + 1
+        capitalist.id = #capitalists + 1
         capitalist.frustrationThreshold = randomInt(6, 12)
         table.insert(capitalists, capitalist)
     end
@@ -239,11 +242,12 @@ local function startGame()
 end
 
 local function nextLevel()
+    Audio.playSFX("win")
     scoring.levelsWon = scoring.levelsWon + 1
-    if scoring.levelsWon == 1 then
+    if scoring.levelsWon == 2 then
         ui:alert("You can pan the map holding rightclick, or WASD", "pan")
     end
-    if scoring.levelsWon == 2 then
+    if scoring.levelsWon == 3 then
         ui:alert("You can zoom in and out with scrollwheel, or +/-", "zoom")
     end
     local newSeed = seedStringToInt(seed) + scoring.levelsWon
@@ -254,18 +258,20 @@ local function nextLevel()
         worldAutomataRatio = worldAutomataRatio - 1
     end
 
-    if scoring.levelsWon > 6 then
-        worldWidth = 1000
-        worldHeight = 800
-    elseif scoring.levelsWon > 6 then
-        worldWidth = 800
-        worldHeight = 600
-    elseif scoring.levelsWon > 5 then
-        worldWidth = 500
-        worldHeight = 400
-    elseif scoring.levelsWon > 4 then
-        worldWidth = 400
-        worldHeight = 300
+    if seed == DEFAULT_SEED then
+        if scoring.levelsWon > 6 then
+            worldWidth = 1000
+            worldHeight = 800
+        elseif scoring.levelsWon > 6 then
+            worldWidth = 800
+            worldHeight = 600
+        elseif scoring.levelsWon > 5 then
+            worldWidth = 500
+            worldHeight = 400
+        elseif scoring.levelsWon > 4 then
+            worldWidth = 400
+            worldHeight = 300
+        end
     end
 
     GenerateWorld()

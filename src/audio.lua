@@ -34,13 +34,15 @@ local files = {
     doot = {
         'assets/audio/doot1.mp3',
         'assets/audio/doot23.mp3',
-    }
+    },
+    win = 'assets/audio/win.mp3'
 }
 
+local idx = 1
 function Audio.playSFX(name)
     if type(files[name]) == 'table' then
-        local idx = love.math.random(#files[name])
-        local file = files[name][idx]
+        local file = files[name][idx % #files[name] + 1]
+        idx = idx + 1
         return love.audio.play(file, 'static', false)
     end
     return love.audio.play(files[name], 'static', false)

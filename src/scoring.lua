@@ -1,4 +1,4 @@
-local Audio = require("src.audio")
+-- local Audio = require("src.audio")
 
 Scoring = {}
 Scoring.__index = Scoring
@@ -54,11 +54,13 @@ function Scoring:reset()
 end
 
 function Scoring:upgradeAvailable(label)
-    return self:toolLevel() > 1
-    -- if label == ABILITY_DIG then return true end
-    -- if label == ABILITY_EXPLODE then
-    --     return self.ability_score >= 5 or UI_DEBUG
-    -- end
+    if label == ABILITY_DIG then return true end
+    if label == ABILITY_EXPLODE then
+        return self:toolLevel() > 1
+    end
+    if label == ABILITY_LINE then
+        return self:toolLevel() > 3
+    end
 end
 
 function Scoring:useUpgrade()

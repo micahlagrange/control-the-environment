@@ -1,6 +1,6 @@
 local spritesheet = require("src.spritesheet")
 local anim8 = require("libs.anim8")
-local Audio = require("src.audio")
+-- local Audio = require("src.audio")
 
 local UI = {}
 UI.__index = UI
@@ -117,12 +117,14 @@ function UI:draw()
     local buttonHeight = self.height / gridVSize
 
     for i, button in ipairs(self.buttons) do
-        if self.scoring:upgradeAvailable(button.label) or button.buttonType ~= BUTTON_TYPE_ABILITY or button.label == ABILITY_SELECT then
+        if not self.scoring:upgradeAvailable(button.label) or button.buttonType ~= BUTTON_TYPE_ABILITY then
+            love.graphics.setColor(.2, .2, .2)
+        else
             love.graphics.setColor(1, 1, 1)
+        end
             love.graphics.draw(
                 button.icon, button.x * buttonWidth, button.y * buttonHeight, 0,
                 buttonWidth / button.icon:getWidth(), buttonHeight / button.icon:getHeight())
-        end
     end
 
     -- highlight button hovered on
@@ -149,7 +151,7 @@ function UI:draw()
         "     Tool level: " .. self.scoring:toolLevel() + 1 .. "      Wins: " .. self.scoring.levelsWon, 10, 10)
 
     -- draw cursor last!
-    if self.abilities.selectedAbility == ABILITY_SELECT then
+    if self.abilities.selectedAbility == ABILITY_DIG then
         -- additional check if ability expired and we need to go back to selector
         self.cursorImage = plainCursor
     end
@@ -160,7 +162,7 @@ function UI:draw()
     if self.alertShown then
         local alertPosition = { x = 60, y = 40 }
         local alertColor = { .9, .3, .3 }
-        love.graphics.setColor({0, 0, 0, .8})
+        love.graphics.setColor({ 0, 0, 0, .8 })
         love.graphics.rectangle("fill", alertPosition.x - 10, alertPosition.y - 10, self.width - 100, alertPosition.y + 5)
         love.graphics.setColor(alertColor)
         love.graphics.print(self.alertText, alertPosition.x, alertPosition.y)

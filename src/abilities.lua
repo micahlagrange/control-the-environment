@@ -1,6 +1,6 @@
 require("src.constants")
 
-local Audio = require("src.audio")
+-- local Audio = require("src.audio")
 local Abilities = {}
 Abilities.__index = Abilities
 
@@ -75,6 +75,9 @@ function Abilities:useAbility()
         self.world:breakLineAtMouse()
         self.scoring:incrementActions()
         self.scoring:useUpgrade()
+        if not self.scoring:upgradeAvailable(ABILITY_LINE) then
+            self:unready()
+        end
     elseif self.selectedAbility == ABILITY_DRAG then
         self.drag = self.drag - 1
     end

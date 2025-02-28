@@ -1,6 +1,6 @@
 UI_DEBUG = false
 PATH_DEBUG = false
-DEBUG = true
+DEBUG = false
 MAP_DEBUG = false
 ANIMATION_DEBUG = false
 SCALE = 1

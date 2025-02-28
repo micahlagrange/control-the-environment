@@ -69,7 +69,6 @@ function World:breakLineAtMouse()
     for i = 1, length + 1 do
         local x = tilePos.x
         local y = tilePos.y - length / 2 + i
-        print("uiy offset: " .. y)
         if self.tiles[x] and self.tiles[x][y] then
             self.tiles[x][y].Alive = true
         end
