@@ -1,5 +1,6 @@
 require("src.constants")
 
+local Audio = require("src.audio")
 local Abilities = {}
 Abilities.__index = Abilities
 
@@ -52,15 +53,17 @@ function Abilities:getHighlightColor()
 end
 
 function Abilities:unready()
-    self.selectedAbility = ABILITY_SELECT
+    self:readyAbility(ABILITY_DIG)
 end
 
 function Abilities:useAbility()
     if self.selectedAbility == ABILITY_DIG then
+        Audio.playSFX("mine")
         -- set the clicked tile to be an Alive cell
         self.world:breakWallTileAtMouse()
         self.scoring:incrementActions()
     elseif self.selectedAbility == ABILITY_EXPLODE then
+        Audio.playSFX("explode")
         self.world:breakWallTileAndSurroundingAtMouse()
         self.scoring:incrementActions()
         self.scoring:useUpgrade()
@@ -68,7 +71,10 @@ function Abilities:useAbility()
             self:unready()
         end
     elseif self.selectedAbility == ABILITY_LINE then
-        self.line = self.line - 1
+        Audio.playSFX("linemine")
+        self.world:breakLineAtMouse()
+        self.scoring:incrementActions()
+        self.scoring:useUpgrade()
     elseif self.selectedAbility == ABILITY_DRAG then
         self.drag = self.drag - 1
     end

@@ -62,6 +62,20 @@ function World:breakWallTileAndSurroundingAtMouse()
     end
 end
 
+function World:breakLineAtMouse()
+    local uix, uiy = love.mouse.getPosition()
+    local length = 10
+    local tilePos = self:getTileCoordinatesFromScreen(uix, uiy)
+    for i = 1, length + 1 do
+        local x = tilePos.x
+        local y = tilePos.y - length / 2 + i
+        print("uiy offset: " .. y)
+        if self.tiles[x] and self.tiles[x][y] then
+            self.tiles[x][y].Alive = true
+        end
+    end
+end
+
 function World:tileIsAliveAtPosition(x, y)
     if not self.tiles[x] or not self.tiles[y] then
         return false

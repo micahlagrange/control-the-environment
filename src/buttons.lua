@@ -14,8 +14,8 @@ local increaseAutomataRatioButtonImage = love.graphics.newImage("assets/images/U
 local decreaseAutomataRatioButtonImage = love.graphics.newImage("assets/images/UI/decrease_automata_ratio_btn.png")
 local explodeButtonImage = love.graphics.newImage("assets/images/UI/explod_btn.png")
 local explodeCursor = love.graphics.newImage("assets/images/UI/explod_cursor.png")
--- local lineButtonImage = love.graphics.newImage("assets/images/UI/line_icon.png")
--- local lineCursor = love.graphics.newImage("assets/images/UI/line_cursor.png")
+local lineButtonImage = love.graphics.newImage("assets/images/UI/line_btn.png")
+local lineCursor = love.graphics.newImage("assets/images/UI/line_cursor.png")
 -- local dragButtonImage = love.graphics.newImage("assets/images/UI/drag_icon.png")
 -- local dragCursor = love.graphics.newImage("assets/images/UI/drag_cursor.png")
 
@@ -41,8 +41,8 @@ local buttonTypes = {
     {
         label = ABILITY_LINE,
         buttonType = BUTTON_TYPE_ABILITY,
-        icon = plainButtonImage,
-        cursor = plainCursor,
+        icon = lineButtonImage,
+        cursor = lineCursor,
     },
     {
         label = ABILITY_DRAG,

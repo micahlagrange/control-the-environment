@@ -1,3 +1,5 @@
+local Audio = require("src.audio")
+
 Scoring = {}
 Scoring.__index = Scoring
 
@@ -11,14 +13,17 @@ function Scoring:new()
 
     self.levelsWon = 0
     self.ability_score = 0
+
     return self
 end
 
 function Scoring:incrementComplaints()
+    Audio.playSFX("complaining")
     self.complaints = self.complaints + 10
 end
 
 function Scoring:incrementIcks()
+    Audio.playSFX("ick")
     self.icks = self.icks + 5
 end
 
@@ -27,6 +32,7 @@ function Scoring:incrementActions()
 end
 
 function Scoring:incrementFruits()
+    Audio.playSFX("crunch")
     self.ability_score = self.ability_score + 1
     self.fruits = self.fruits + 50
 end
@@ -48,10 +54,11 @@ function Scoring:reset()
 end
 
 function Scoring:upgradeAvailable(label)
-    if label == ABILITY_DIG then return true end
-    if label == ABILITY_EXPLODE then
-        return self.ability_score >= 5 or UI_DEBUG
-    end
+    return self:toolLevel() > 1
+    -- if label == ABILITY_DIG then return true end
+    -- if label == ABILITY_EXPLODE then
+    --     return self.ability_score >= 5 or UI_DEBUG
+    -- end
 end
 
 function Scoring:useUpgrade()

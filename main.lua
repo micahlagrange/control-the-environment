@@ -1,5 +1,6 @@
 love.graphics.setDefaultFilter("nearest", "nearest")
 
+local Audio     = require('src.audio')
 local tiles     = {}
 
 -- libs
@@ -8,26 +9,26 @@ local Character = require("libs.character")
 -- src classes
 local Util      = require("src.util")
 require("src.constants")
-local Camera       = require("src.camera")
-local camera       = Camera:new(0, 0, ZOOM_LEVEL)
-local World        = require("src.world")
-local world        = World:new(tiles, camera)
-local Scoring      = require("src.scoring")
-local scoring      = Scoring:new()
-local Abilities    = require("src.abilities")
-local abilities    = Abilities:new(world, scoring)
+local Camera      = require("src.camera")
+local camera      = Camera:new(0, 0, ZOOM_LEVEL)
+local World       = require("src.world")
+local world       = World:new(tiles, camera)
+local Scoring     = require("src.scoring")
+local scoring     = Scoring:new()
+local Abilities   = require("src.abilities")
+local abilities   = Abilities:new(world, scoring)
 
 -- UI
-local UI           = require("src.ui")
-local ui           = UI:new(abilities, camera, scoring)
+local UI          = require("src.ui")
+local ui          = UI:new(abilities, camera, scoring)
 
 -- Locals
-local aiCharacters = {}
-local fruitImages  = {}
-local playerView   = Character:new(world, WORLD_WIDTH / 2, WORLD_HEIGHT / 2, CHARACTER_SIZE, CHARACTER_SIZE, scoring)
-local dragging     = false
-local inputActive  = false
-local inputText    = ""
+local capitalists = {}
+local fruitImages = {}
+local playerView  = Character:new(world, WORLD_WIDTH / 2, WORLD_HEIGHT / 2, CHARACTER_SIZE, CHARACTER_SIZE, scoring)
+local dragging    = false
+local inputActive = false
+local inputText   = ""
 
 
 local seed                = DEFAULT_SEED
@@ -37,19 +38,34 @@ local worldUpdateLimit    = WORLD_UPDATE_LIMIT
 local worldAutomataRatio  = WORLD_AUTOMATA_RATIO
 local groundUpdateLimit   = GROUND_UPDATE_LIMIT
 local groundAutomataRatio = GROUND_AUTOMATA_RATIO
-local levelsPassed        = 0
+
+if DEBUG then scoring.ability_score = 200 end
+
+local function getMinCapitalists()
+    if scoring.levelsWon >= 9 then
+        return 5
+    end
+    if scoring.levelsWon >= 5 then
+        return 3
+    end
+    if scoring.levelsWon >= 3 then
+        return 2
+    end
+    return 1
+end
 
 local function getMaxCapitalists()
-    local max = math.floor(worldWidth * worldHeight / 200000)
-    if max < 1 then
-        return 1
+    local max = math.floor(worldWidth * worldHeight / 100000)
+    if max < getMinCapitalists() then
+        return getMinCapitalists()
     else
         return max
     end
 end
 
 local function getMaxFruit()
-    if levelsPassed == 0 then return 1 end
+    if DEBUG then print("levels won: " .. scoring.levelsWon) end
+    if scoring.levelsWon == 0 then return 1 end
     local max = getMaxCapitalists() * 2
     if max < 1 then
         return 1
@@ -153,15 +169,17 @@ local function GenerateWorld()
 
     applyCellularAutomata(tiles, width, height, worldUpdateLimit, 3, 3)
 
-    -- Empty out aiCharacters without reassigning the table
-    for i = #aiCharacters, 1, -1 do
-        aiCharacters[i] = nil
+    -- Empty out capitalists without reassigning the table
+    for i = #capitalists, 1, -1 do
+        capitalists[i] = nil
     end
 
+    if DEBUG then print("min capitalists: " ..
+    getMinCapitalists() .. ", max capitalists: " .. getMaxCapitalists() .. ", max foods: " .. getMaxFruit()) end
     for i = 1, getMaxCapitalists() do
-        local aiCharacter
+        local capitalist
         repeat
-            aiCharacter = Character:new(
+            capitalist = Character:new(
                 world,
                 randomInt(1, worldWidth),
                 randomInt(1, worldHeight),
@@ -169,10 +187,12 @@ local function GenerateWorld()
                 CHARACTER_SIZE,
                 scoring
             )
-        until isCharacterPositionValid(aiCharacter.x, aiCharacter.y)
-        aiCharacter.id = #aiCharacters + 1
-        table.insert(aiCharacters, aiCharacter)
+        until isCharacterPositionValid(capitalist.x, capitalist.y)
+        capitalist.id = #capitalist + 1
+        capitalist.frustrationThreshold = randomInt(6, 12)
+        table.insert(capitalists, capitalist)
     end
+    if DEBUG then print("capitalists: " .. #capitalists) end
 
     -- Add fruit
     repeat
@@ -206,7 +226,9 @@ local function GenerateGroundColors()
 end
 
 local function startGame()
-    ui:alert("Help the dudes get the foods!")
+    camera:setZoom(4)
+
+    ui:alert("Help the dudes get the foods! Dig out obstacles!", nil, "achievement")
     abilities:readyAbility(ABILITY_DIG)
     print("Starting game with seed: " .. seed)
     love.math.setRandomSeed(seedStringToInt(seed)) -- set the seed for reproducibility, always coerce it to a number
@@ -217,15 +239,14 @@ local function startGame()
 end
 
 local function nextLevel()
-    levelsPassed = levelsPassed + 1
     scoring.levelsWon = scoring.levelsWon + 1
-    if levelsPassed == 1 then
+    if scoring.levelsWon == 1 then
+        ui:alert("You can pan the map holding rightclick, or WASD", "pan")
+    end
+    if scoring.levelsWon == 2 then
         ui:alert("You can zoom in and out with scrollwheel, or +/-", "zoom")
     end
-    if levelsPassed == 2 then
-        ui:alert("You can move the map around with rightclick, or WASD", "pan")
-    end
-    local newSeed = seedStringToInt(seed) + levelsPassed
+    local newSeed = seedStringToInt(seed) + scoring.levelsWon
     print("new seed: " .. newSeed)
     love.math.setRandomSeed(newSeed)
 
@@ -233,9 +254,19 @@ local function nextLevel()
         worldAutomataRatio = worldAutomataRatio - 1
     end
 
-    -- increase world area by 10%
-    worldWidth = worldWidth * 1.1
-    worldHeight = worldHeight * 1.1
+    if scoring.levelsWon > 6 then
+        worldWidth = 1000
+        worldHeight = 800
+    elseif scoring.levelsWon > 6 then
+        worldWidth = 800
+        worldHeight = 600
+    elseif scoring.levelsWon > 5 then
+        worldWidth = 500
+        worldHeight = 400
+    elseif scoring.levelsWon > 4 then
+        worldWidth = 400
+        worldHeight = 300
+    end
 
     GenerateWorld()
     GenerateGroundColors()
@@ -277,14 +308,14 @@ end
 
 local giveUpTimer = 0
 
-local function updateAICharacters(dt)
+local function updateCapitalists(dt)
     giveUpTimer = giveUpTimer + dt
-    for _, aiCharacter in ipairs(aiCharacters) do
-        aiCharacter:chooseNearestFruit()
+    for _, capitalist in ipairs(capitalists) do
+        capitalist:chooseNearestFruit()
     end
 
-    for _, aiCharacter in ipairs(aiCharacters) do
-        aiCharacter:update(dt)
+    for _, capitalist in ipairs(capitalists) do
+        capitalist:update(dt)
     end
 end
 
@@ -342,13 +373,14 @@ function love.load(arg)
     -- ui:addButton(ABILITY_SELECT, 1, 1)
     ui:addButton(ABILITY_DIG, 1, 3)
     ui:addButton(ABILITY_EXPLODE, 1, 5)
+    ui:addButton(ABILITY_LINE, 1, 7)
     ui:addButton(SYSTEM_EXIT, 19, 15)
 end
 
 function love.update(dt)
     if not inputActive then
         updatePlayerView(dt)
-        updateAICharacters(dt)
+        updateCapitalists(dt)
 
         -- Update camera position
         camera:update(dt, playerView.x, playerView.y, playerView.width, playerView.height, WINDOW_WIDTH, WINDOW_HEIGHT)
@@ -408,8 +440,8 @@ function love.draw(dt)
     end
 
     -- Draw AI characters
-    for _, aiCharacter in ipairs(aiCharacters) do
-        aiCharacter:draw()
+    for _, char in ipairs(capitalists) do
+        char:draw()
     end
 
     if DEBUG then
@@ -500,6 +532,7 @@ function love.mousepressed(x, y, button)
         local clickedButton = ui:clickedButton(x, y)
         if clickedButton then
             ui:doButtonClick(clickedButton)
+            Audio.playSFX("click")
         elseif abilities.selectedAbility then
             abilities:useAbility(x, y)
         end

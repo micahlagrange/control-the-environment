@@ -32,6 +32,10 @@ function Camera:zoom(factor)
     self.scale = self.scale * factor
 end
 
+function Camera:setZoom(level)
+    self.scale = level
+end
+
 function Camera:toWorldSpace(x, y)
     -- whatever the zoom level, return the world coordinates of the screen coordinates
     return {

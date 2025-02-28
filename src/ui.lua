@@ -1,5 +1,6 @@
 local spritesheet = require("src.spritesheet")
 local anim8 = require("libs.anim8")
+local Audio = require("src.audio")
 
 local UI = {}
 UI.__index = UI
@@ -143,9 +144,9 @@ function UI:draw()
     love.graphics.setColor(1, 1, 1)
     -- draw score
     love.graphics.print(
-    "Score: " ..
-    self.scoring:getFinalScore() ..
-    "     Tool level: " .. self.scoring:toolLevel() + 1 .. "      Wins: " .. self.scoring.levelsWon, 10, 10)
+        "Score: " ..
+        self.scoring:getFinalScore() ..
+        "     Tool level: " .. self.scoring:toolLevel() + 1 .. "      Wins: " .. self.scoring.levelsWon, 10, 10)
 
     -- draw cursor last!
     if self.abilities.selectedAbility == ABILITY_SELECT then
@@ -159,6 +160,8 @@ function UI:draw()
     if self.alertShown then
         local alertPosition = { x = 60, y = 40 }
         local alertColor = { .9, .3, .3 }
+        love.graphics.setColor({0, 0, 0, .8})
+        love.graphics.rectangle("fill", alertPosition.x - 10, alertPosition.y - 10, self.width - 100, alertPosition.y + 5)
         love.graphics.setColor(alertColor)
         love.graphics.print(self.alertText, alertPosition.x, alertPosition.y)
     end
@@ -184,8 +187,11 @@ function UI:getHoveredTile(x, y)
     return self.camera:toTileSpace(x, y)
 end
 
-function UI:alert(text, iconActionName)
-    self.alertTimer = 10
+function UI:alert(text, iconActionName, sfx)
+    if sfx then
+        Audio.playSFX(sfx)
+    end
+    self.alertTimer = 30
     self.alertShown = true
     self.alertText = text
     if iconActionName == "zoom" then

@@ -1,5 +1,6 @@
 local Luafinding         = require("libs.luafinding")
 local Util               = require("src.util")
+local Audio              = require("src.audio")
 local Character          = {}
 local Vector             = require("libs.vector")
 Character.__index        = Character
@@ -54,7 +55,20 @@ function Character:new(world, x, y, width, height, scoring)
     }
     self.animation = self.leftrightanimation
     self.world = world
+    self.bornTime = love.timer.getTime()
+    self.frustrationThreshold = 12
     return self
+end
+
+function Character:secondsWithoutTarget()
+    local now = love.timer.getTime()
+    return now - self.bornTime
+end
+
+function Character:getFrustrated()
+    if not self.complaining and self:secondsWithoutTarget() > self.frustrationThreshold then
+        self:complain()
+    end
 end
 
 function Character:addIck(x, y)
@@ -63,7 +77,6 @@ function Character:addIck(x, y)
 end
 
 function Character:targetGivesIck(target)
-    -- remove old icks
     for i = #self.icks, 1, -1 do
         if love.timer.getTime() - self.icks[i].timestamp > 10 then
             table.remove(self.icks, i)
@@ -86,10 +99,19 @@ function Character:updateAnimation(dt)
     end
 end
 
+function Character:pos()
+    local tile = Util.worldToTileSpace(self.x, self.y)
+    return { x = tile.x, y = tile.y }
+end
+
+function Character:newPathfinderToTarget(target)
+    if not self:pos() then return false end
+    return Luafinding(Vector(self:pos().x, self:pos().y), Vector(target.x, target.y),
+        function(pos) return self.world:tileIsAliveAtPosition(pos.x, pos.y) end, true)
+end
+
 function Character:chooseNearestFruit()
     if self.targetFruit then return end
-
-    if DEBUG then print(#Fruits .. " fruits available") end
 
     local nearestFruit = nil
     local nearestDistance = math.huge
@@ -98,22 +120,23 @@ function Character:chooseNearestFruit()
         local fruitPos = Util.tileToWorldSpace(fruit.x, fruit.y)
         local distance = math.sqrt((self.x - fruitPos.x) ^ 2 + (self.y - fruitPos.y) ^ 2)
         if distance < nearestDistance and not fruit.claimed then
-            if not self:targetGivesIck(fruit) then
+            local pathfinder = self:newPathfinderToTarget(fruit)
+            -- enable diagonalMovement
+            if pathfinder:GetPath() then
                 nearestDistance = distance
                 nearestFruit = fruit
-            elseif DEBUG then
-                print("Skipping ick fruit at " .. fruit.x .. ", " .. fruit.y)
+                self.pathfinder = pathfinder
+                Audio.playSFX("settled")
+                self.bornTime = math.huge
+                if PATH_DEBUG then
+                    print("got pathfinder for " .. fruit.x .. ", " .. fruit.y)
+                end
             end
         end
     end
     if nearestFruit then
         nearestFruit.claimed = love.timer.getTime()
         self.targetFruit = nearestFruit
-        self.complaining = false -- Reset complaining status
-    end
-
-    if DEBUG then
-        self:debugFruitPathing()
     end
 end
 
@@ -140,11 +163,7 @@ end
 function Character:update(dt)
     self:moveToNextStep(dt)
     self:updateAnimation(dt)
-    if self.targetFruit and self.complaining then
-        if self.targetFruit.claimed and love.timer.getTime() - self.targetFruit.claimed > 10 then
-            self:giveUpOnTarget()
-        end
-    end
+    self:getFrustrated()
 end
 
 function Character:draw()
@@ -154,15 +173,14 @@ function Character:draw()
     local visualScaleY = 3          -- Scale factor for visual size
     if self.path and #self.path > 0 then
         local nextStep = self.path[self.pathIndex]
-        local currentTilePos = Util.worldToTileSpace(self.x, self.y)
-        if nextStep.x < currentTilePos.x then
+        if nextStep.x < self:pos().x then
             self.animation = self.leftrightanimation
-        elseif nextStep.x > currentTilePos.x then
+        elseif nextStep.x > self:pos().x then
             self.animation = self.leftrightanimation
             scaleX = -1 -- Flip horizontally if moving right, since we only have a left walking version
-        elseif nextStep.y > currentTilePos.y then
+        elseif nextStep.y > self:pos().y then
             self.animation = self.downanimation
-        elseif nextStep.y == currentTilePos.y and nextStep.x == currentTilePos.x then
+        elseif nextStep.y == self:pos().y and nextStep.x == self:pos().x then
             -- target is in the same tile, just keep the same animation
         else
             self.animation = self.upanimation
@@ -211,29 +229,25 @@ function Character:draw()
     -- Draw debug text for nextStep and currentTilePos
     if ANIMATION_DEBUG and self.path and #self.path > 0 then
         local nextStep = self.path[self.pathIndex]
-        local currentTilePos = Util.worldToTileSpace(self.x, self.y)
         love.graphics.setColor(1, 1, 1)
         love.graphics.print("Next: (" .. nextStep.x .. ", " .. nextStep.y .. ")", self.x, self.y + self.height + 10)
-        love.graphics.print("Current: (" .. currentTilePos.x .. ", " .. currentTilePos.y .. ")", self.x, self.y - 20)
+        love.graphics.print("Current: (" .. self:pos().x .. ", " .. self:pos().y .. ")", self.x, self.y - 20)
         love.graphics.print("Target: (" .. self.targetFruit.x .. ", " .. self.targetFruit.y .. ")", self.x, self.y - 30)
     end
     if ANIMATION_DEBUG then
         -- Draw a larger point on the tile the AI character is standing on
-        local currentTilePos = Util.worldToTileSpace(self.x, self.y)
         love.graphics.setColor(1, 0, 0)
-        local tileCenterX = (currentTilePos.x - 1) * TILE_SIZE + TILE_SIZE / 2
-        local tileCenterY = (currentTilePos.y - 1) * TILE_SIZE + TILE_SIZE / 2
+        local tileCenterX = (self:pos().x - 1) * TILE_SIZE + TILE_SIZE / 2
+        local tileCenterY = (self:pos().y - 1) * TILE_SIZE + TILE_SIZE / 2
         love.graphics.circle("fill", tileCenterX, tileCenterY, 3)
     end
 end
 
 function Character:giveUpOnTarget()
     if self.targetFruit then
-        self:addIck(self.targetFruit.x, self.targetFruit.y)
         self.targetFruit.claimed = nil
         self.targetFruit = nil
         self.path = nil
-        self.complaining = false
     end
 end
 
@@ -252,27 +266,14 @@ end
 
 function Character:moveToNextStep(dt)
     if self.targetFruit then
-        if not self.path or #self.path == 0 then
-            local startPos = Util.worldToTileSpace(self.x, self.y)
-            local startX = startPos.x
-            local startY = startPos.y
-            local endX, endY = self.targetFruit.x, self.targetFruit.y
-
-            -- Define the positionOpenCheck function
-            local function positionOpenCheck(pos)
-                return self.world:tileIsAliveAtPosition(pos.x, pos.y)
+        if self.pathfinder then
+            if PATH_DEBUG then
+                print("tostr " .. self.pathfinder:__tostring())
             end
-
-            local pathfinder = Luafinding(Vector(startX, startY), Vector(endX, endY), positionOpenCheck, true) -- Enable diagonal movement
-            self.path = pathfinder:GetPath()
-            if PATH_DEBUG and self.path then
-                print("Got path for AI " .. self.id .. ": " .. #self.path)
-                print(pathfinder:__tostring())
-            else
-                -- complain because you have a target but can't path
-                self:complain()
+            if not self.path or #self.path == 0 then
+                self.path = self.pathfinder:GetPath()
+                self.pathIndex = 1
             end
-            self.pathIndex = 1
         end
 
         if self.path and #self.path > 0 then
@@ -303,6 +304,7 @@ function Character:moveToNextStep(dt)
                         Util.removeEntityAtTile(Fruits, self.targetFruit.x, self.targetFruit.y)
                         self.targetFruit = nil
                         self.path = nil
+                        self.bornTime = love.timer.getTime()
                     end
                 end
             end
