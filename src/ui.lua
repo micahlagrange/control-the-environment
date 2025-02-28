@@ -148,7 +148,7 @@ function UI:draw()
     love.graphics.print(
         "Score: " ..
         self.scoring:getFinalScore() ..
-        "     Tool level: " .. self.scoring:toolLevel() + 1 .. "      Wins: " .. self.scoring.levelsWon, 10, 10)
+        "     Tool level: " .. self.scoring:toolLevel() + 0  .. "       Foods left: " .. #Fruits .. "      Wins: " .. self.scoring.levelsWon, 9, 10)
 
     -- draw cursor last!
     if self.abilities.selectedAbility == ABILITY_DIG then
