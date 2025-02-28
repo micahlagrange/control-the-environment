@@ -35,7 +35,8 @@ local files = {
         'assets/audio/doot1.mp3',
         'assets/audio/doot23.mp3',
     },
-    win = 'assets/audio/win.mp3'
+    win = 'assets/audio/win.mp3',
+    theme = 'assets/audio/Detached Floor.wav',
 }
 
 local idx = 1

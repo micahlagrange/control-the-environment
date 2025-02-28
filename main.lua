@@ -1,6 +1,7 @@
 love.graphics.setDefaultFilter("nearest", "nearest")
 
 Audio           = require('src.audio')
+Audio.playBGM("theme")
 local tiles     = {}
 
 -- libs
