@@ -1,6 +1,6 @@
 love.graphics.setDefaultFilter("nearest", "nearest")
 
-Audio           = require('src.audio')
+Audio = require('src.audio')
 Audio.playBGM("theme")
 local tiles     = {}
 
@@ -230,7 +230,7 @@ local function GenerateGroundColors()
 end
 
 local function startGame()
-    camera:setZoom(4)
+    camera:setZoom(3)
 
     ui:alert("Help the dudes get the foods! Dig out obstacles!", nil, "achievement")
     abilities:readyAbility(ABILITY_DIG)
