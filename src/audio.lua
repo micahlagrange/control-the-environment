@@ -39,13 +39,21 @@ local files = {
 }
 
 local idx = 1
-function Audio.playSFX(name)
+local function getFile(name)
     if type(files[name]) == 'table' then
         local file = files[name][idx % #files[name] + 1]
-        idx = idx + 1
-        return love.audio.play(file, 'static', false)
+        if idx > 10000 then
+            idx = 1
+        else
+            idx = idx + 1
+        end
+        return file
     end
-    return love.audio.play(files[name], 'static', false)
+    return files[name]
+end
+
+function Audio.playSFX(name)
+    return love.audio.play(getFile(name), 'static', false)
 end
 
 function Audio.playBGM(name)
@@ -67,6 +75,13 @@ function Audio.update(dt)
             currentBGM:play()
         end
     end
+end
+
+local monoSrc
+function Audio.monoSFX(name)
+    if monoSrc then monoSrc:stop() end
+    monoSrc = love.audio.newSource(getFile(name), 'static')
+    return love.audio.play(monoSrc)
 end
 
 function Audio.interruptMusicSFX(name)

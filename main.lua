@@ -55,7 +55,7 @@ local function getMinCapitalists()
 end
 
 local function getMaxCapitalists()
-    local max = math.floor(worldWidth * worldHeight / 100000)
+    local max = math.floor(worldWidth * worldHeight / 150000)
     if max < getMinCapitalists() then
         return getMinCapitalists()
     else
@@ -259,7 +259,7 @@ local function nextLevel()
     end
 
     if seed == DEFAULT_SEED then
-        if scoring.levelsWon > 6 then
+        if scoring.levelsWon > 7 then
             worldWidth = 1000
             worldHeight = 800
         elseif scoring.levelsWon > 6 then
@@ -538,7 +538,7 @@ function love.mousepressed(x, y, button)
         local clickedButton = ui:clickedButton(x, y)
         if clickedButton then
             ui:doButtonClick(clickedButton)
-            Audio.playSFX("click")
+            Audio.monoSFX("click")
         elseif abilities.selectedAbility then
             abilities:useAbility(x, y)
         end

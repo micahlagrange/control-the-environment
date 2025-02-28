@@ -25,6 +25,12 @@ do
         if type(what) ~= "userdata" or not what:typeOf("Source") then
             src = love.audio.newSource(what, how)
             src:setLooping(loop or false)
+        else
+            -- if it is a source, just play it
+            -- this way external caller can track the source
+            -- allowing them to have sfx interrupt each other on a 
+            -- single channel
+            return play(src)
         end
 
         play(src)

@@ -5,7 +5,7 @@ local Character          = {}
 local Vector             = require("libs.vector")
 Character.__index        = Character
 
-Character.AI_SPEED       = 50 -- Set AI speed variable
+Character.AI_SPEED       = 100 -- Set AI speed variable
 
 local walkLeftRightImage = love.graphics.newImage("assets/images/guys/whitecollarwalk.png")
 local walkUpImage        = love.graphics.newImage("assets/images/guys/upwalk.png")
@@ -126,7 +126,7 @@ function Character:chooseNearestFruit()
                 nearestDistance = distance
                 nearestFruit = fruit
                 self.pathfinder = pathfinder
-                Audio.playSFX("settled")
+                Audio.monoSFX("settled")
                 self.bornTime = math.huge
                 if PATH_DEBUG then
                     print("got pathfinder for " .. fruit.x .. ", " .. fruit.y)
